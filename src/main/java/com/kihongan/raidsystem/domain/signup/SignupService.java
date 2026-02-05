@@ -90,6 +90,13 @@ public class SignupService {
                     userId
                 );
                 
+                // Get raid creator name
+                String creatorName = jdbcTemplate.queryForObject(
+                    "SELECT name FROM users WHERE id = ?",
+                    String.class,
+                    raid.getCreatedBy()
+                );
+                
                 int currentCount = signupRepository.findByRaidIdWithDetails(raidId).size();
                 
                 lineMessagingService.sendSignupNotification(
@@ -99,7 +106,8 @@ public class SignupService {
                     character.getJob(),
                     character.getLevel(),
                     currentCount,
-                    6
+                    6,
+                    creatorName
                 );
             } catch (Exception e) {
                 // Log but don't fail the operation
@@ -138,12 +146,20 @@ public class SignupService {
         try {
             Raid raid = raidRepository.findById(raidId).orElseThrow();
             
+            // Get raid creator name
+            String creatorName = jdbcTemplate.queryForObject(
+                "SELECT name FROM users WHERE id = ?",
+                String.class,
+                raid.getCreatedBy()
+            );
+            
             lineMessagingService.sendCancelSignupNotification(
                 raid.getTitle(),
                 userSignup.getUserName(),
                 userSignup.getCharacterName(),
                 signups.size() - 1, // Current count after cancellation
-                6
+                6,
+                creatorName
             );
         } catch (Exception e) {
             System.err.println("Failed to send cancel notification: " + e.getMessage());

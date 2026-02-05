@@ -79,14 +79,14 @@ public class LineMessagingService {
     /**
      * 發送報名成功通知
      */
-    public void sendSignupNotification(String raidTitle, String userName, String characterName, String job, Integer level, int currentCount, int maxCount) {
+    public void sendSignupNotification(String raidTitle, String userName, String characterName, String job, Integer level, int currentCount, int maxCount, String creatorName) {
         if (groupId == null || groupId.isEmpty()) {
             return;
         }
         
         FlexMessage flexMessage = FlexMessage.builder()
-                .altText("✅ " + userName + " 已報名：" + raidTitle)
-                .contents(createSignupBubble(raidTitle, userName, characterName, job, level, currentCount, maxCount))
+                .altText("✅ " + userName + " 加入 " + creatorName + " 的遠征隊：" + raidTitle)
+                .contents(createSignupBubble(raidTitle, userName, characterName, job, level, currentCount, maxCount, creatorName))
                 .build();
         
         PushMessage pushMessage = new PushMessage(groupId, flexMessage);
@@ -101,14 +101,14 @@ public class LineMessagingService {
     /**
      * 發送取消報名通知
      */
-    public void sendCancelSignupNotification(String raidTitle, String userName, String characterName, int currentCount, int maxCount) {
+    public void sendCancelSignupNotification(String raidTitle, String userName, String characterName, int currentCount, int maxCount, String creatorName) {
         if (groupId == null || groupId.isEmpty()) {
             return;
         }
         
         FlexMessage flexMessage = FlexMessage.builder()
-                .altText("❌ " + userName + " 已取消報名：" + raidTitle)
-                .contents(createCancelSignupBubble(raidTitle, userName, characterName, currentCount, maxCount))
+                .altText("❌ " + userName + " 取消 " + creatorName + " 的遠征隊：" + raidTitle)
+                .contents(createCancelSignupBubble(raidTitle, userName, characterName, currentCount, maxCount, creatorName))
                 .build();
         
         PushMessage pushMessage = new PushMessage(groupId, flexMessage);
@@ -256,7 +256,7 @@ public class LineMessagingService {
     /**
      * 建立報名通知的 Flex Message Bubble
      */
-    private Bubble createSignupBubble(String raidTitle, String userName, String characterName, String job, Integer level, int currentCount, int maxCount) {
+    private Bubble createSignupBubble(String raidTitle, String userName, String characterName, String job, Integer level, int currentCount, int maxCount, String creatorName) {
         String jobLevel = job != null ? job : "未設定";
         if (level != null) {
             jobLevel += " Lv." + level;
@@ -294,6 +294,7 @@ public class LineMessagingService {
                                         .margin(FlexMarginSize.LG)
                                         .spacing(FlexMarginSize.SM)
                                         .contents(Arrays.asList(
+                                                createInfoRow("🎯 隊長", creatorName),
                                                 createInfoRow("👤 玩家", userName),
                                                 createInfoRow("⚔️ 角色", characterName),
                                                 createInfoRow("💼 職業", jobLevel),
@@ -325,7 +326,7 @@ public class LineMessagingService {
     /**
      * 建立取消報名通知的 Flex Message Bubble
      */
-    private Bubble createCancelSignupBubble(String raidTitle, String userName, String characterName, int currentCount, int maxCount) {
+    private Bubble createCancelSignupBubble(String raidTitle, String userName, String characterName, int currentCount, int maxCount, String creatorName) {
         String statusColor = "#999999";
         String statusText = currentCount + "/" + maxCount + " 人";
         
@@ -357,6 +358,7 @@ public class LineMessagingService {
                                         .margin(FlexMarginSize.LG)
                                         .spacing(FlexMarginSize.SM)
                                         .contents(Arrays.asList(
+                                                createInfoRow("🎯 隊長", creatorName),
                                                 createInfoRow("👤 玩家", userName),
                                                 createInfoRow("⚔️ 角色", characterName),
                                                 Box.builder()
