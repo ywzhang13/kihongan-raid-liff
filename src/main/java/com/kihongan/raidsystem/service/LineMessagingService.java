@@ -55,6 +55,28 @@ public class LineMessagingService {
     }
     
     /**
+     * 發送遠征隊建立並加入通知（合併版）
+     */
+    public void sendRaidCreatedWithSignupNotification(String raidTitle, String creatorName, LocalDateTime startTime, String subtitle, String characterName, String job, Integer level) {
+        if (groupId == null || groupId.isEmpty()) {
+            return;
+        }
+        
+        FlexMessage flexMessage = FlexMessage.builder()
+                .altText("🎯 " + creatorName + " 建立遠征隊：" + raidTitle)
+                .contents(createRaidCreatedWithSignupBubble(raidTitle, creatorName, startTime, subtitle, characterName, job, level))
+                .build();
+        
+        PushMessage pushMessage = new PushMessage(groupId, flexMessage);
+        
+        try {
+            lineMessagingClient.pushMessage(pushMessage).get();
+        } catch (Exception e) {
+            System.err.println("Failed to send LINE notification: " + e.getMessage());
+        }
+    }
+    
+    /**
      * 發送報名成功通知
      */
     public void sendSignupNotification(String raidTitle, String userName, String characterName, String job, Integer level, int currentCount, int maxCount) {
@@ -117,6 +139,81 @@ public class LineMessagingService {
                         .contents(Arrays.asList(
                                 Text.builder()
                                         .text("🎯 新遠征隊")
+                                        .weight(Text.TextWeight.BOLD)
+                                        .size(FlexFontSize.LG)
+                                        .color("#FFFFFF")
+                                        .build()
+                        ))
+                        .backgroundColor("#667eea")
+                        .paddingAll("13px")
+                        .build())
+                .body(Box.builder()
+                        .layout(FlexLayout.VERTICAL)
+                        .contents(Arrays.asList(
+                                Text.builder()
+                                        .text(raidTitle)
+                                        .weight(Text.TextWeight.BOLD)
+                                        .size(FlexFontSize.XL)
+                                        .margin(FlexMarginSize.MD)
+                                        .build(),
+                                Box.builder()
+                                        .layout(FlexLayout.VERTICAL)
+                                        .margin(FlexMarginSize.LG)
+                                        .spacing(FlexMarginSize.SM)
+                                        .contents(bodyContents)
+                                        .build()
+                        ))
+                        .build())
+                .footer(Box.builder()
+                        .layout(FlexLayout.VERTICAL)
+                        .contents(Arrays.asList(
+                                Text.builder()
+                                        .text("點擊 LIFF 連結報名參加！")
+                                        .size(FlexFontSize.SM)
+                                        .color("#999999")
+                                        .align(FlexAlign.CENTER)
+                                        .build()
+                        ))
+                        .build())
+                .build();
+    }
+    
+    /**
+     * 建立遠征隊並加入通知的 Flex Message Bubble（合併版）
+     */
+    private Bubble createRaidCreatedWithSignupBubble(String raidTitle, String creatorName, LocalDateTime startTime, String subtitle, String characterName, String job, Integer level) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm");
+        String timeStr = startTime.format(formatter);
+        
+        String jobLevel = job != null ? job : "未設定";
+        if (level != null) {
+            jobLevel += " Lv." + level;
+        }
+        
+        List<FlexComponent> bodyContents = Arrays.asList(
+                createInfoRow("👤 建立人", creatorName),
+                createInfoRow("⏰ 時間", timeStr),
+                subtitle != null && !subtitle.isEmpty() ? createInfoRow("📝 備註", subtitle) : null,
+                // 分隔線
+                Box.builder()
+                        .layout(FlexLayout.VERTICAL)
+                        .contents(Arrays.asList(
+                                Separator.builder().margin(FlexMarginSize.MD).build()
+                        ))
+                        .margin(FlexMarginSize.MD)
+                        .build(),
+                // 加入資訊
+                createInfoRow("⚔️ 角色", characterName),
+                createInfoRow("💼 職業", jobLevel),
+                createInfoRow("👥 人數", "1/6 人")
+        ).stream().filter(c -> c != null).collect(Collectors.toList());
+        
+        return Bubble.builder()
+                .header(Box.builder()
+                        .layout(FlexLayout.VERTICAL)
+                        .contents(Arrays.asList(
+                                Text.builder()
+                                        .text("🎯 新遠征隊（已加入）")
                                         .weight(Text.TextWeight.BOLD)
                                         .size(FlexFontSize.LG)
                                         .color("#FFFFFF")

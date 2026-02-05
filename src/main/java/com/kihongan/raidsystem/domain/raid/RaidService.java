@@ -86,15 +86,37 @@ public class RaidService {
         Raid savedRaid = raidRepository.save(raid);
         
         // Auto-signup creator if characterId is provided
+        String characterName = null;
+        String characterJob = null;
+        Integer characterLevel = null;
+        
         if (request.getCharacterId() != null && signupService != null) {
             try {
-                signupService.createSignup(creatorUserId, savedRaid.getId(), request.getCharacterId());
+                // Get character info before signup
+                characterName = jdbcTemplate.queryForObject(
+                    "SELECT name FROM characters WHERE id = ?",
+                    String.class,
+                    request.getCharacterId()
+                );
+                characterJob = jdbcTemplate.queryForObject(
+                    "SELECT job FROM characters WHERE id = ?",
+                    String.class,
+                    request.getCharacterId()
+                );
+                characterLevel = jdbcTemplate.queryForObject(
+                    "SELECT level FROM characters WHERE id = ?",
+                    Integer.class,
+                    request.getCharacterId()
+                );
+                
+                // Signup without notification (will send combined notification below)
+                signupService.createSignupWithoutNotification(creatorUserId, savedRaid.getId(), request.getCharacterId());
             } catch (Exception e) {
                 System.err.println("Failed to auto-signup creator: " + e.getMessage());
             }
         }
         
-        // Send LINE notification
+        // Send combined LINE notification
         try {
             String creatorName = jdbcTemplate.queryForObject(
                 "SELECT name FROM users WHERE id = ?",
@@ -103,12 +125,26 @@ public class RaidService {
             );
             
             LocalDateTime startTime = LocalDateTime.ofInstant(savedRaid.getStartTime(), ZoneId.of("Asia/Taipei"));
-            lineMessagingService.sendRaidCreatedNotification(
-                savedRaid.getTitle(),
-                creatorName,
-                startTime,
-                savedRaid.getSubtitle()
-            );
+            
+            // Send combined notification if creator joined, otherwise just raid created
+            if (characterName != null) {
+                lineMessagingService.sendRaidCreatedWithSignupNotification(
+                    savedRaid.getTitle(),
+                    creatorName,
+                    startTime,
+                    savedRaid.getSubtitle(),
+                    characterName,
+                    characterJob,
+                    characterLevel
+                );
+            } else {
+                lineMessagingService.sendRaidCreatedNotification(
+                    savedRaid.getTitle(),
+                    creatorName,
+                    startTime,
+                    savedRaid.getSubtitle()
+                );
+            }
         } catch (Exception e) {
             // Log but don't fail the operation
             System.err.println("Failed to send raid created notification: " + e.getMessage());

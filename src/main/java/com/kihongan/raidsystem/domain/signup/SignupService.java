@@ -42,6 +42,20 @@ public class SignupService {
      * Creates a signup with validation.
      */
     public Signup createSignup(Long userId, Long raidId, Long characterId) {
+        return createSignupInternal(userId, raidId, characterId, true);
+    }
+    
+    /**
+     * Creates a signup without notification (for auto-signup when creating raid).
+     */
+    public Signup createSignupWithoutNotification(Long userId, Long raidId, Long characterId) {
+        return createSignupInternal(userId, raidId, characterId, false);
+    }
+    
+    /**
+     * Internal method to create signup with optional notification.
+     */
+    private Signup createSignupInternal(Long userId, Long raidId, Long characterId, boolean sendNotification) {
         // Validate raid exists
         validateRaidExists(raidId);
         
@@ -66,29 +80,31 @@ public class SignupService {
         
         Signup savedSignup = signupRepository.save(signup);
         
-        // Send LINE notification
-        try {
-            Raid raid = raidRepository.findById(raidId).orElseThrow();
-            String userName = jdbcTemplate.queryForObject(
-                "SELECT name FROM users WHERE id = ?",
-                String.class,
-                userId
-            );
-            
-            int currentCount = signupRepository.findByRaidIdWithDetails(raidId).size();
-            
-            lineMessagingService.sendSignupNotification(
-                raid.getTitle(),
-                userName,
-                character.getName(),
-                character.getJob(),
-                character.getLevel(),
-                currentCount,
-                6
-            );
-        } catch (Exception e) {
-            // Log but don't fail the operation
-            System.err.println("Failed to send signup notification: " + e.getMessage());
+        // Send LINE notification only if requested
+        if (sendNotification) {
+            try {
+                Raid raid = raidRepository.findById(raidId).orElseThrow();
+                String userName = jdbcTemplate.queryForObject(
+                    "SELECT name FROM users WHERE id = ?",
+                    String.class,
+                    userId
+                );
+                
+                int currentCount = signupRepository.findByRaidIdWithDetails(raidId).size();
+                
+                lineMessagingService.sendSignupNotification(
+                    raid.getTitle(),
+                    userName,
+                    character.getName(),
+                    character.getJob(),
+                    character.getLevel(),
+                    currentCount,
+                    6
+                );
+            } catch (Exception e) {
+                // Log but don't fail the operation
+                System.err.println("Failed to send signup notification: " + e.getMessage());
+            }
         }
         
         return savedSignup;
