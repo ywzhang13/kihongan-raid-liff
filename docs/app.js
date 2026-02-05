@@ -6,8 +6,8 @@ let currentUser = null;
 // 初始化 LIFF
 async function initializeLiff() {
     try {
-        // 替換為你的 LIFF ID
-        await liff.init({ liffId: '2009058924-rV0KQaLl' });
+        // 使用正確的 LIFF ID
+        await liff.init({ liffId: '2009058924-rvQKQaLI' });
         
         if (!liff.isLoggedIn()) {
             liff.login();
