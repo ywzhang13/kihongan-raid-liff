@@ -145,19 +145,35 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 14px;
+            background-color: white;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
         
         /* 優化手機版 datetime-local 輸入框 */
         input[type="datetime-local"] {
             font-size: 16px; /* 防止 iOS 自動縮放 */
             height: 44px; /* 更好的觸控體驗 */
+            padding: 10px;
+            line-height: normal;
+            /* 移除瀏覽器預設樣式 */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
         
         /* 針對 iOS Safari 的優化 */
         @supports (-webkit-touch-callout: none) {
             input[type="datetime-local"] {
-                padding: 8px;
+                padding: 10px;
             }
+        }
+        
+        /* 確保 select 也有一致的高度 */
+        select {
+            height: 44px;
+            padding: 10px;
         }
         
         textarea {

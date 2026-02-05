@@ -573,7 +573,7 @@ async function loadRaidSignups(raidId) {
                             `<div style="width: 50px; height: 50px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">${index + 1}</div>`
                         }
                         <div class="signup-info">
-                            <h4>⚔️ ${signup.characterName} ${isCurrentUser ? '(你)' : ''}</h4>
+                            <h4>⚔️ ${signup.characterName}</h4>
                             <p><strong>玩家:</strong> ${signup.userName}</p>
                             <p><strong>職業:</strong> ${signup.job || '未設定'} | <strong>等級:</strong> ${signup.level || '?'}</p>
                             ${isCurrentUser ? `
