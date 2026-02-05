@@ -32,6 +32,8 @@ public class RaidController {
     public RaidController(RaidService raidService, SignupService signupService) {
         this.raidService = raidService;
         this.signupService = signupService;
+        // Set SignupService in RaidService for auto-signup
+        this.raidService.setSignupService(signupService);
     }
     
     /**

@@ -153,6 +153,7 @@ function switchTab(tabName) {
     } else if (tabName === 'raids') {
         loadRaids();
         loadMyCharacters(); // 載入角色列表供報名使用
+        loadCharactersForRaidCreation(); // 載入角色到建立遠征的下拉選單
     }
 }
 
@@ -796,11 +797,38 @@ window.onclick = function(event) {
     }
 }
 
+// 載入角色到建立遠征的下拉選單
+async function loadCharactersForRaidCreation() {
+    try {
+        const characters = await apiRequest('/me/characters');
+        const select = document.getElementById('raidCharacter');
+        
+        if (!select) return;
+        
+        // 清空選項
+        select.innerHTML = '<option value="">請選擇角色</option>';
+        
+        // 添加角色選項
+        characters.forEach(char => {
+            const option = document.createElement('option');
+            option.value = char.id;
+            option.textContent = `${char.name} ${char.isDefault ? '⭐' : ''} (${char.job || '未設定'} Lv.${char.level || '?'})`;
+            if (char.isDefault) {
+                option.selected = true; // 預設選擇預設角色
+            }
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('載入角色失敗:', error);
+    }
+}
+
 async function createRaid() {
     try {
         const boss = document.getElementById('raidBoss').value.trim();
         const subtitle = document.getElementById('raidSubtitle').value.trim();
         const startTime = document.getElementById('raidStartTime').value;
+        const characterId = document.getElementById('raidCharacter').value;
         
         if (!boss) {
             alert('請選擇 Boss');
@@ -812,11 +840,17 @@ async function createRaid() {
             return;
         }
         
+        if (!characterId) {
+            alert('請選擇參加角色');
+            return;
+        }
+        
         const data = {
             title: boss,
             subtitle: subtitle || null,
             boss: boss,
-            startTime: new Date(startTime).toISOString()
+            startTime: new Date(startTime).toISOString(),
+            characterId: parseInt(characterId)
         };
         
         const result = await apiRequest('/raids', {
@@ -828,13 +862,17 @@ async function createRaid() {
         document.getElementById('raidBoss').value = '';
         document.getElementById('raidSubtitle').value = '';
         document.getElementById('raidStartTime').value = '';
+        document.getElementById('raidCharacter').value = '';
+        
+        // 顯示成功訊息
+        showSuccessMessage('✅ 遠征隊建立成功！');
         
         // 重新載入列表
         loadRaids();
         
     } catch (error) {
         console.error('建立遠征失敗:', error);
-        showResponse('raidsResponse', error, true);
+        alert('建立遠征失敗: ' + (error.error || error.message || JSON.stringify(error)));
     }
 }
 

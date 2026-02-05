@@ -34,6 +34,13 @@ public class RaidService {
         this.lineMessagingService = lineMessagingService;
     }
     
+    // For auto-signup after raid creation
+    private com.kihongan.raidsystem.domain.signup.SignupService signupService;
+    
+    public void setSignupService(com.kihongan.raidsystem.domain.signup.SignupService signupService) {
+        this.signupService = signupService;
+    }
+    
     /**
      * Lists all raids ordered by start time.
      */
@@ -61,8 +68,9 @@ public class RaidService {
     }
     
     /**
-     * Creates a new raid with validation.
+     * Creates a new raid with validation and auto-signup creator.
      */
+    @Transactional
     public Raid createRaid(Long creatorUserId, CreateRaidRequest request) {
         // Validate raid data
         validateRaidData(request);
@@ -76,6 +84,15 @@ public class RaidService {
         raid.setCreatedBy(creatorUserId);
         
         Raid savedRaid = raidRepository.save(raid);
+        
+        // Auto-signup creator if characterId is provided
+        if (request.getCharacterId() != null && signupService != null) {
+            try {
+                signupService.createSignup(creatorUserId, savedRaid.getId(), request.getCharacterId());
+            } catch (Exception e) {
+                System.err.println("Failed to auto-signup creator: " + e.getMessage());
+            }
+        }
         
         // Send LINE notification
         try {

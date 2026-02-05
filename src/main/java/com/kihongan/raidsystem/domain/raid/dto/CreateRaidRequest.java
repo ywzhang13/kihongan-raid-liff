@@ -19,14 +19,17 @@ public class CreateRaidRequest {
     @NotNull(message = "Start time is required")
     private Instant startTime;
     
+    private Long characterId;
+    
     public CreateRaidRequest() {
     }
     
-    public CreateRaidRequest(String title, String subtitle, String boss, Instant startTime) {
+    public CreateRaidRequest(String title, String subtitle, String boss, Instant startTime, Long characterId) {
         this.title = title;
         this.subtitle = subtitle;
         this.boss = boss;
         this.startTime = startTime;
+        this.characterId = characterId;
     }
     
     // Getters and Setters
@@ -61,5 +64,13 @@ public class CreateRaidRequest {
     
     public void setStartTime(Instant startTime) {
         this.startTime = startTime;
+    }
+    
+    public Long getCharacterId() {
+        return characterId;
+    }
+    
+    public void setCharacterId(Long characterId) {
+        this.characterId = characterId;
     }
 }
