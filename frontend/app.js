@@ -1,17 +1,55 @@
 // 全域變數
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'https://kihongan-raid-liff.onrender.com';
 let appToken = null;
 let currentUser = null;
 
 // 初始化 LIFF
 async function initializeLiff() {
     try {
-        // 在測試環境中，我們模擬 LIFF 初始化
-        // 實際部署時需要替換為真實的 LIFF ID
-        showMessage('userStatus', '⚠️ 測試模式：使用模擬登入', 'warning');
+        // 替換為你的 LIFF ID
+        await liff.init({ liffId: '2009058924-rV0KQaLl' });
         
-        // 模擬登入（測試用）
-        await mockLogin();
+        if (!liff.isLoggedIn()) {
+            liff.login();
+            return;
+        }
+        
+        // 取得使用者資訊
+        const profile = await liff.getProfile();
+        const idToken = liff.getIDToken();
+        
+        // 呼叫後端登入 API
+        const response = await fetch(`${API_BASE_URL}/auth/line`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idToken: idToken,
+                userId: profile.userId,
+                name: profile.displayName,
+                picture: profile.pictureUrl
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('登入失敗');
+        }
+        
+        const data = await response.json();
+        appToken = data.appToken;
+        currentUser = {
+            lineUserId: data.lineUserId,
+            userDbId: data.userDbId,
+            name: profile.displayName,
+            picture: profile.pictureUrl
+        };
+        
+        showMessage('userStatus', `✅ 已登入: ${currentUser.name}`, 'success');
+        
+        // 自動載入初始資料
+        loadMyCharacters();
+        loadRaids();
         
     } catch (error) {
         console.error('LIFF 初始化失敗:', error);
