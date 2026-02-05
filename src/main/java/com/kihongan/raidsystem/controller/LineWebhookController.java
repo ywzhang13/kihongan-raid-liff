@@ -47,14 +47,14 @@ public class LineWebhookController {
             if ("!groupid".equalsIgnoreCase(messageText.trim())) {
                 try {
                     lineMessagingClient.replyMessage(
-                        com.linecorp.bot.model.ReplyMessage.builder()
-                            .replyToken(event.getReplyToken())
-                            .messages(Arrays.asList(
+                        new com.linecorp.bot.model.ReplyMessage(
+                            event.getReplyToken(),
+                            Arrays.asList(
                                 com.linecorp.bot.model.message.TextMessage.builder()
                                     .text("群組 ID: " + groupId)
                                     .build()
-                            ))
-                            .build()
+                            )
+                        )
                     ).get();
                 } catch (Exception e) {
                     log.error("Failed to reply message", e);
