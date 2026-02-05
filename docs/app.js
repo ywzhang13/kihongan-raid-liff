@@ -4,12 +4,24 @@ let appToken = null;
 let currentUser = null;
 
 // 初始化 LIFF
+let isInitializing = false;
 async function initializeLiff() {
+    // 防止重複初始化
+    if (isInitializing) {
+        console.log('LIFF 正在初始化中，跳過重複請求');
+        return;
+    }
+    
+    isInitializing = true;
+    
     try {
+        showMessage('userStatus', '⏳ 正在初始化...', 'info');
+        
         // 使用正確的 LIFF ID
         await liff.init({ liffId: '2009058924-rvQKQaLI' });
         
         if (!liff.isLoggedIn()) {
+            showMessage('userStatus', '🔐 請登入 LINE', 'warning');
             liff.login();
             return;
         }
@@ -18,7 +30,12 @@ async function initializeLiff() {
         const profile = await liff.getProfile();
         const idToken = liff.getIDToken();
         
-        // 呼叫後端登入 API
+        showMessage('userStatus', '⏳ 正在登入後端...', 'info');
+        
+        // 呼叫後端登入 API（增加超時處理）
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超時
+        
         const response = await fetch(`${API_BASE_URL}/auth/line`, {
             method: 'POST',
             headers: {
@@ -29,11 +46,15 @@ async function initializeLiff() {
                 userId: profile.userId,
                 name: profile.displayName,
                 picture: profile.pictureUrl
-            })
+            }),
+            signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
+        
         if (!response.ok) {
-            throw new Error('登入失敗');
+            const errorText = await response.text();
+            throw new Error(`登入失敗 (${response.status}): ${errorText}`);
         }
         
         const data = await response.json();
@@ -48,12 +69,19 @@ async function initializeLiff() {
         showMessage('userStatus', `✅ 已登入: ${currentUser.name}`, 'success');
         
         // 自動載入初始資料
-        loadMyCharacters();
-        loadRaids();
+        await loadMyCharacters();
+        await loadRaids();
         
     } catch (error) {
         console.error('LIFF 初始化失敗:', error);
-        showMessage('userStatus', '❌ 初始化失敗: ' + error.message, 'error');
+        
+        if (error.name === 'AbortError') {
+            showMessage('userStatus', '❌ 連線超時，請檢查後端服務是否正常運作', 'error');
+        } else {
+            showMessage('userStatus', '❌ 初始化失敗: ' + error.message, 'error');
+        }
+    } finally {
+        isInitializing = false;
     }
 }
 
@@ -158,21 +186,40 @@ async function apiRequest(endpoint, options = {}) {
         headers['Authorization'] = `Bearer ${appToken}`;
     }
     
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers
-    });
+    // 增加超時處理
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超時
     
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: response.statusText }));
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers,
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ 
+                error: response.statusText,
+                status: response.status 
+            }));
+            throw error;
+        }
+        
+        if (response.status === 204) {
+            return null;
+        }
+        
+        return await response.json();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        
+        if (error.name === 'AbortError') {
+            throw new Error('請求超時，請檢查網路連線');
+        }
         throw error;
     }
-    
-    if (response.status === 204) {
-        return null;
-    }
-    
-    return await response.json();
 }
 
 // ==================== 角色管理 ====================
@@ -183,6 +230,10 @@ async function loadMyCharacters() {
         displayCharacters(characters);
     } catch (error) {
         console.error('載入角色失敗:', error);
+        const container = document.getElementById('charactersList');
+        if (container) {
+            container.innerHTML = '<p style="color: #e74c3c; padding: 20px; text-align: center;">❌ 載入失敗，請稍後再試</p>';
+        }
     }
 }
 
@@ -348,6 +399,10 @@ async function loadRaids() {
         displayRaids(raids);
     } catch (error) {
         console.error('載入遠征失敗:', error);
+        const container = document.getElementById('raidsList');
+        if (container) {
+            container.innerHTML = '<p style="color: #e74c3c; padding: 20px; text-align: center;">❌ 載入失敗，請稍後再試</p>';
+        }
     }
 }
 
