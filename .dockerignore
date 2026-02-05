@@ -1,0 +1,10 @@
+target/
+.git/
+.gitignore
+*.md
+.env
+.kiro/
+docs/
+frontend/
+*.log
+.DS_Store
