@@ -109,10 +109,19 @@ public class RaidService {
                     request.getCharacterId()
                 );
                 
+                System.out.println("DEBUG: Character info retrieved - name: " + characterName + ", job: " + characterJob + ", level: " + characterLevel);
+                
                 // Signup without notification (will send combined notification below)
                 signupService.createSignupWithoutNotification(creatorUserId, savedRaid.getId(), request.getCharacterId());
+                
+                System.out.println("DEBUG: Auto-signup successful for character: " + characterName);
             } catch (Exception e) {
                 System.err.println("Failed to auto-signup creator: " + e.getMessage());
+                e.printStackTrace();
+                // Reset character info if signup failed
+                characterName = null;
+                characterJob = null;
+                characterLevel = null;
             }
         }
         
@@ -126,8 +135,11 @@ public class RaidService {
             
             LocalDateTime startTime = LocalDateTime.ofInstant(savedRaid.getStartTime(), ZoneId.of("Asia/Taipei"));
             
+            System.out.println("DEBUG: Preparing to send notification - characterName: " + characterName);
+            
             // Send combined notification if creator joined, otherwise just raid created
             if (characterName != null) {
+                System.out.println("DEBUG: Sending combined notification");
                 lineMessagingService.sendRaidCreatedWithSignupNotification(
                     savedRaid.getTitle(),
                     creatorName,
@@ -138,6 +150,7 @@ public class RaidService {
                     characterLevel
                 );
             } else {
+                System.out.println("DEBUG: Sending raid created notification only");
                 lineMessagingService.sendRaidCreatedNotification(
                     savedRaid.getTitle(),
                     creatorName,
@@ -145,9 +158,11 @@ public class RaidService {
                     savedRaid.getSubtitle()
                 );
             }
+            System.out.println("DEBUG: Notification sent successfully");
         } catch (Exception e) {
             // Log but don't fail the operation
             System.err.println("Failed to send raid created notification: " + e.getMessage());
+            e.printStackTrace();
         }
         
         return savedRaid;

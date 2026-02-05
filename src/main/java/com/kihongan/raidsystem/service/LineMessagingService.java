@@ -35,7 +35,10 @@ public class LineMessagingService {
      * 發送遠征隊建立通知
      */
     public void sendRaidCreatedNotification(String raidTitle, String creatorName, LocalDateTime startTime, String subtitle) {
+        System.out.println("DEBUG: sendRaidCreatedNotification called - groupId: " + groupId);
+        
         if (groupId == null || groupId.isEmpty()) {
+            System.out.println("DEBUG: Group ID is empty, skipping notification");
             return; // 未設定群組 ID，跳過通知
         }
         
@@ -47,10 +50,13 @@ public class LineMessagingService {
         PushMessage pushMessage = new PushMessage(groupId, flexMessage);
         
         try {
+            System.out.println("DEBUG: Sending push message to LINE...");
             lineMessagingClient.pushMessage(pushMessage).get();
+            System.out.println("DEBUG: Push message sent successfully");
         } catch (Exception e) {
             // Log error but don't fail the operation
             System.err.println("Failed to send LINE notification: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -58,7 +64,10 @@ public class LineMessagingService {
      * 發送遠征隊建立並加入通知（合併版）
      */
     public void sendRaidCreatedWithSignupNotification(String raidTitle, String creatorName, LocalDateTime startTime, String subtitle, String characterName, String job, Integer level) {
+        System.out.println("DEBUG: sendRaidCreatedWithSignupNotification called - groupId: " + groupId);
+        
         if (groupId == null || groupId.isEmpty()) {
+            System.out.println("DEBUG: Group ID is empty, skipping notification");
             return;
         }
         
@@ -70,9 +79,12 @@ public class LineMessagingService {
         PushMessage pushMessage = new PushMessage(groupId, flexMessage);
         
         try {
+            System.out.println("DEBUG: Sending push message to LINE...");
             lineMessagingClient.pushMessage(pushMessage).get();
+            System.out.println("DEBUG: Push message sent successfully");
         } catch (Exception e) {
             System.err.println("Failed to send LINE notification: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
