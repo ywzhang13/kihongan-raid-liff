@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-local.sql
+
+line:
+  login:
+    channelId: ${LINE_CHANNEL_ID:2009058924}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:your-secret-key-must-be-at-least-32-characters-long}
+    expiration: 86400000 # 24 hours in milliseconds

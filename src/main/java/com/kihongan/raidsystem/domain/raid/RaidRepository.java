@@ -1,0 +1,101 @@
+package com.kihongan.raidsystem.domain.raid;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
+
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Repository for Raid entity using JDBC.
+ * Handles all database operations for raids.
+ */
+@Repository
+public class RaidRepository {
+    
+    private final JdbcTemplate jdbcTemplate;
+    
+    public RaidRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+    
+    private final RowMapper<Raid> raidRowMapper = (rs, rowNum) -> {
+        Raid raid = new Raid();
+        raid.setId(rs.getLong("id"));
+        raid.setTitle(rs.getString("title"));
+        raid.setSubtitle(rs.getString("subtitle"));
+        raid.setBoss(rs.getString("boss"));
+        
+        Timestamp startTime = rs.getTimestamp("start_time");
+        if (startTime != null) {
+            raid.setStartTime(startTime.toInstant());
+        }
+        
+        raid.setCreatedBy(rs.getLong("created_by"));
+        
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+            raid.setCreatedAt(createdAt.toInstant());
+        }
+        
+        return raid;
+    };
+    
+    /**
+     * Finds all raids ordered by start time.
+     */
+    public List<Raid> findAllOrderByStartTime() {
+        String sql = "SELECT * FROM raids ORDER BY start_time ASC";
+        return jdbcTemplate.query(sql, raidRowMapper);
+    }
+    
+    /**
+     * Finds a raid by ID.
+     */
+    public Optional<Raid> findById(Long id) {
+        String sql = "SELECT * FROM raids WHERE id = ?";
+        List<Raid> results = jdbcTemplate.query(sql, raidRowMapper, id);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+    }
+    
+    /**
+     * Saves a raid (insert only, raids are not updated).
+     */
+    public Raid save(Raid raid) {
+        String sql = """
+                INSERT INTO raids (title, subtitle, boss, start_time, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                RETURNING id
+                """;
+        
+        Instant now = Instant.now();
+        raid.setCreatedAt(now);
+        
+        Long id = jdbcTemplate.queryForObject(sql, Long.class,
+                raid.getTitle(),
+                raid.getSubtitle(),
+                raid.getBoss(),
+                Timestamp.from(raid.getStartTime()),
+                raid.getCreatedBy(),
+                Timestamp.from(raid.getCreatedAt())
+        );
+        
+        raid.setId(id);
+        return raid;
+    }
+    
+    /**
+     * Deletes a raid by ID.
+     */
+    public void deleteById(Long id) {
+        String sql = "DELETE FROM raids WHERE id = ?";
+        jdbcTemplate.update(sql, id);
+    }
+}
