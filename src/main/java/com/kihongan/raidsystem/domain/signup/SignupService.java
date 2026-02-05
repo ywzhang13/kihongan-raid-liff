@@ -1,10 +1,14 @@
 package com.kihongan.raidsystem.domain.signup;
 
+import com.kihongan.raidsystem.domain.character.Character;
 import com.kihongan.raidsystem.domain.character.CharacterRepository;
+import com.kihongan.raidsystem.domain.raid.Raid;
 import com.kihongan.raidsystem.domain.raid.RaidRepository;
 import com.kihongan.raidsystem.exception.AuthorizationException;
 import com.kihongan.raidsystem.exception.NotFoundException;
 import com.kihongan.raidsystem.exception.ValidationException;
+import com.kihongan.raidsystem.service.LineMessagingService;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,13 +23,19 @@ public class SignupService {
     private final SignupRepository signupRepository;
     private final CharacterRepository characterRepository;
     private final RaidRepository raidRepository;
+    private final LineMessagingService lineMessagingService;
+    private final JdbcTemplate jdbcTemplate;
     
     public SignupService(SignupRepository signupRepository,
                         CharacterRepository characterRepository,
-                        RaidRepository raidRepository) {
+                        RaidRepository raidRepository,
+                        LineMessagingService lineMessagingService,
+                        JdbcTemplate jdbcTemplate) {
         this.signupRepository = signupRepository;
         this.characterRepository = characterRepository;
         this.raidRepository = raidRepository;
+        this.lineMessagingService = lineMessagingService;
+        this.jdbcTemplate = jdbcTemplate;
     }
     
     /**
@@ -36,9 +46,8 @@ public class SignupService {
         validateRaidExists(raidId);
         
         // Validate character exists
-        if (!characterRepository.findById(characterId).isPresent()) {
-            throw new NotFoundException("Character not found");
-        }
+        Character character = characterRepository.findById(characterId)
+                .orElseThrow(() -> new NotFoundException("Character not found"));
         
         // Validate character ownership
         validateCharacterOwnership(userId, characterId);
@@ -55,7 +64,34 @@ public class SignupService {
         signup.setCharacterId(characterId);
         signup.setStatus("confirmed");
         
-        return signupRepository.save(signup);
+        Signup savedSignup = signupRepository.save(signup);
+        
+        // Send LINE notification
+        try {
+            Raid raid = raidRepository.findById(raidId).orElseThrow();
+            String userName = jdbcTemplate.queryForObject(
+                "SELECT name FROM users WHERE id = ?",
+                String.class,
+                userId
+            );
+            
+            int currentCount = signupRepository.findByRaidIdWithDetails(raidId).size();
+            
+            lineMessagingService.sendSignupNotification(
+                raid.getTitle(),
+                userName,
+                character.getName(),
+                character.getJob(),
+                character.getLevel(),
+                currentCount,
+                6
+            );
+        } catch (Exception e) {
+            // Log but don't fail the operation
+            System.err.println("Failed to send signup notification: " + e.getMessage());
+        }
+        
+        return savedSignup;
     }
     
     /**

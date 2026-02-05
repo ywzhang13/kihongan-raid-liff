@@ -36,7 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/raids").permitAll()
-                        .requestMatchers("/raids/*/signups").permitAll()
+                        .requestMatchers("/raids/**").permitAll()
                         
                         // All other endpoints require authentication
                         .anyRequest().authenticated()

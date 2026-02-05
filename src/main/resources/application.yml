@@ -16,6 +16,13 @@ spring:
 line:
   login:
     channelId: ${LINE_CHANNEL_ID:2009058924}
+  bot:
+    channel-token: ${LINE_BOT_CHANNEL_TOKEN:}
+    channel-secret: ${LINE_BOT_CHANNEL_SECRET:}
+    handler:
+      path: /line/webhook
+  webhook:
+    group-id: ${LINE_GROUP_ID:}
 
 app:
   jwt:

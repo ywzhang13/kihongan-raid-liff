@@ -4,11 +4,14 @@ import com.kihongan.raidsystem.domain.raid.dto.CreateRaidRequest;
 import com.kihongan.raidsystem.domain.raid.dto.RaidDTO;
 import com.kihongan.raidsystem.domain.signup.SignupRepository;
 import com.kihongan.raidsystem.exception.ValidationException;
+import com.kihongan.raidsystem.service.LineMessagingService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,11 +25,13 @@ public class RaidService {
     private final RaidRepository raidRepository;
     private final SignupRepository signupRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final LineMessagingService lineMessagingService;
     
-    public RaidService(RaidRepository raidRepository, SignupRepository signupRepository, JdbcTemplate jdbcTemplate) {
+    public RaidService(RaidRepository raidRepository, SignupRepository signupRepository, JdbcTemplate jdbcTemplate, LineMessagingService lineMessagingService) {
         this.raidRepository = raidRepository;
         this.signupRepository = signupRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.lineMessagingService = lineMessagingService;
     }
     
     /**
@@ -70,7 +75,29 @@ public class RaidService {
         raid.setStartTime(request.getStartTime());
         raid.setCreatedBy(creatorUserId);
         
-        return raidRepository.save(raid);
+        Raid savedRaid = raidRepository.save(raid);
+        
+        // Send LINE notification
+        try {
+            String creatorName = jdbcTemplate.queryForObject(
+                "SELECT name FROM users WHERE id = ?",
+                String.class,
+                creatorUserId
+            );
+            
+            LocalDateTime startTime = LocalDateTime.ofInstant(savedRaid.getStartTime(), ZoneId.of("Asia/Taipei"));
+            lineMessagingService.sendRaidCreatedNotification(
+                savedRaid.getTitle(),
+                creatorName,
+                startTime,
+                savedRaid.getSubtitle()
+            );
+        } catch (Exception e) {
+            // Log but don't fail the operation
+            System.err.println("Failed to send raid created notification: " + e.getMessage());
+        }
+        
+        return savedRaid;
     }
     
     /**

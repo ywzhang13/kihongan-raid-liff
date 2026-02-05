@@ -61,6 +61,13 @@
             <scope>test</scope>
         </dependency>
         
+        <!-- LINE Bot SDK -->
+        <dependency>
+            <groupId>com.linecorp.bot</groupId>
+            <artifactId>line-bot-spring-boot</artifactId>
+            <version>5.0.3</version>
+        </dependency>
+        
         <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
