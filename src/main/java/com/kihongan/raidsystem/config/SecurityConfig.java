@@ -35,6 +35,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/line/webhook").permitAll()
                         .requestMatchers("/raids").permitAll()
                         .requestMatchers("/raids/*/signups").permitAll()
                         
