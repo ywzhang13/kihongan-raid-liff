@@ -213,7 +213,7 @@ public class LineMessagingService {
                         .layout(FlexLayout.VERTICAL)
                         .contents(Arrays.asList(
                                 Text.builder()
-                                        .text("🎯 新遠征隊（已加入）")
+                                        .text("🎯 新遠征隊")
                                         .weight(Text.TextWeight.BOLD)
                                         .size(FlexFontSize.LG)
                                         .color("#FFFFFF")

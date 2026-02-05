@@ -823,7 +823,13 @@ async function loadCharactersForRaidCreation() {
     }
 }
 
-async function createRaid() {
+async function createRaid(event) {
+    // 防止重複提交
+    const submitButton = document.getElementById('createRaidBtn');
+    if (submitButton.disabled) {
+        return;
+    }
+    
     try {
         const boss = document.getElementById('raidBoss').value.trim();
         const subtitle = document.getElementById('raidSubtitle').value.trim();
@@ -844,6 +850,11 @@ async function createRaid() {
             alert('請選擇參加角色');
             return;
         }
+        
+        // 禁用按鈕並顯示 loading
+        submitButton.disabled = true;
+        const originalText = submitButton.textContent;
+        submitButton.textContent = '⏳ 建立中...';
         
         const data = {
             title: boss,
@@ -873,6 +884,10 @@ async function createRaid() {
     } catch (error) {
         console.error('建立遠征失敗:', error);
         alert('建立遠征失敗: ' + (error.error || error.message || JSON.stringify(error)));
+    } finally {
+        // 恢復按鈕狀態
+        submitButton.disabled = false;
+        submitButton.textContent = '建立遠征';
     }
 }
 

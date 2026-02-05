@@ -147,6 +147,19 @@
             font-size: 14px;
         }
         
+        /* 優化手機版 datetime-local 輸入框 */
+        input[type="datetime-local"] {
+            font-size: 16px; /* 防止 iOS 自動縮放 */
+            height: 44px; /* 更好的觸控體驗 */
+        }
+        
+        /* 針對 iOS Safari 的優化 */
+        @supports (-webkit-touch-callout: none) {
+            input[type="datetime-local"] {
+                padding: 8px;
+            }
+        }
+        
         textarea {
             resize: vertical;
             min-height: 80px;
@@ -632,7 +645,7 @@
                         <option value="">請選擇角色</option>
                     </select>
                 </div>
-                <button onclick="createRaid()">建立遠征</button>
+                <button id="createRaidBtn" onclick="createRaid(event)">建立遠征</button>
                 
                 <hr style="margin: 30px 0;">
                 
