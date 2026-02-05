@@ -102,4 +102,16 @@ public class RaidController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
+    
+    /**
+     * DELETE /raids/{raidId}/signup - Cancel signup for a raid
+     */
+    @DeleteMapping("/{raidId}/signup")
+    public ResponseEntity<Void> cancelSignup(
+            @AuthUser Long userId,
+            @PathVariable Long raidId) {
+        
+        signupService.cancelSignup(userId, raidId);
+        return ResponseEntity.noContent().build();
+    }
 }

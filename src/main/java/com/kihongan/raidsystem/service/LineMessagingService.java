@@ -74,6 +74,28 @@ public class LineMessagingService {
     }
     
     /**
+     * 發送取消報名通知
+     */
+    public void sendCancelSignupNotification(String raidTitle, String userName, String characterName, int currentCount, int maxCount) {
+        if (groupId == null || groupId.isEmpty()) {
+            return;
+        }
+        
+        FlexMessage flexMessage = FlexMessage.builder()
+                .altText("❌ " + userName + " 已取消報名：" + raidTitle)
+                .contents(createCancelSignupBubble(raidTitle, userName, characterName, currentCount, maxCount))
+                .build();
+        
+        PushMessage pushMessage = new PushMessage(groupId, flexMessage);
+        
+        try {
+            lineMessagingClient.pushMessage(pushMessage).get();
+        } catch (Exception e) {
+            System.err.println("Failed to send LINE notification: " + e.getMessage());
+        }
+    }
+    
+    /**
      * 建立遠征隊通知的 Flex Message Bubble
      */
     private Bubble createRaidCreatedBubble(String raidTitle, String creatorName, LocalDateTime startTime, String subtitle) {
@@ -175,6 +197,68 @@ public class LineMessagingService {
                                                 createInfoRow("👤 玩家", userName),
                                                 createInfoRow("⚔️ 角色", characterName),
                                                 createInfoRow("💼 職業", jobLevel),
+                                                Box.builder()
+                                                        .layout(FlexLayout.HORIZONTAL)
+                                                        .contents(Arrays.asList(
+                                                                Text.builder()
+                                                                        .text("👥 人數")
+                                                                        .size(FlexFontSize.SM)
+                                                                        .color("#555555")
+                                                                        .flex(0)
+                                                                        .build(),
+                                                                Text.builder()
+                                                                        .text(statusText)
+                                                                        .size(FlexFontSize.SM)
+                                                                        .color(statusColor)
+                                                                        .weight(Text.TextWeight.BOLD)
+                                                                        .align(FlexComponent.FlexAlign.END)
+                                                                        .build()
+                                                        ))
+                                                        .build()
+                                        ))
+                                        .build()
+                        ))
+                        .build())
+                .build();
+    }
+    
+    /**
+     * 建立取消報名通知的 Flex Message Bubble
+     */
+    private Bubble createCancelSignupBubble(String raidTitle, String userName, String characterName, int currentCount, int maxCount) {
+        String statusColor = "#999999";
+        String statusText = currentCount + "/" + maxCount + " 人";
+        
+        return Bubble.builder()
+                .header(Box.builder()
+                        .layout(FlexLayout.VERTICAL)
+                        .contents(Arrays.asList(
+                                Text.builder()
+                                        .text("❌ 取消報名")
+                                        .weight(Text.TextWeight.BOLD)
+                                        .size(FlexFontSize.LG)
+                                        .color("#FFFFFF")
+                                        .build()
+                        ))
+                        .backgroundColor("#e74c3c")
+                        .paddingAll("13px")
+                        .build())
+                .body(Box.builder()
+                        .layout(FlexLayout.VERTICAL)
+                        .contents(Arrays.asList(
+                                Text.builder()
+                                        .text(raidTitle)
+                                        .weight(Text.TextWeight.BOLD)
+                                        .size(FlexFontSize.XL)
+                                        .margin(FlexMarginSize.MD)
+                                        .build(),
+                                Box.builder()
+                                        .layout(FlexLayout.VERTICAL)
+                                        .margin(FlexMarginSize.LG)
+                                        .spacing(FlexMarginSize.SM)
+                                        .contents(Arrays.asList(
+                                                createInfoRow("👤 玩家", userName),
+                                                createInfoRow("⚔️ 角色", characterName),
                                                 Box.builder()
                                                         .layout(FlexLayout.HORIZONTAL)
                                                         .contents(Arrays.asList(

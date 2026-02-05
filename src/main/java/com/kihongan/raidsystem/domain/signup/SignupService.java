@@ -101,6 +101,39 @@ public class SignupService {
         return signupRepository.findByRaidIdWithDetails(raidId);
     }
     
+    /**
+     * Cancels a signup for a raid.
+     */
+    public void cancelSignup(Long userId, Long raidId) {
+        // Validate raid exists
+        validateRaidExists(raidId);
+        
+        // Find user's signup for this raid
+        List<SignupWithDetails> signups = signupRepository.findByRaidIdWithDetails(raidId);
+        SignupWithDetails userSignup = signups.stream()
+                .filter(s -> s.getUserId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("You have not signed up for this raid"));
+        
+        // Delete the signup
+        signupRepository.deleteById(userSignup.getSignupId());
+        
+        // Send LINE notification
+        try {
+            Raid raid = raidRepository.findById(raidId).orElseThrow();
+            
+            lineMessagingService.sendCancelSignupNotification(
+                raid.getTitle(),
+                userSignup.getUserName(),
+                userSignup.getCharacterName(),
+                signups.size() - 1, // Current count after cancellation
+                6
+            );
+        } catch (Exception e) {
+            System.err.println("Failed to send cancel notification: " + e.getMessage());
+        }
+    }
+    
     // Validation helpers
     
     private void validateCharacterOwnership(Long userId, Long characterId) {

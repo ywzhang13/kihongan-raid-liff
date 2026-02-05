@@ -563,19 +563,26 @@ async function loadRaidSignups(raidId) {
                 <div class="signups-header">
                     已報名人數: <span>${signups.length}</span> 人
                 </div>
-                ${signups.map((signup, index) => `
+                ${signups.map((signup, index) => {
+                    const isCurrentUser = currentUser && signup.userId === currentUser.userDbId;
+                    return `
                     <div class="signup-list-item">
                         ${signup.userPicture ? 
                             `<img src="${signup.userPicture}" alt="${signup.userName}">` : 
                             `<div style="width: 50px; height: 50px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">${index + 1}</div>`
                         }
                         <div class="signup-info">
-                            <h4>⚔️ ${signup.characterName}</h4>
+                            <h4>⚔️ ${signup.characterName} ${isCurrentUser ? '(你)' : ''}</h4>
                             <p><strong>玩家:</strong> ${signup.userName}</p>
                             <p><strong>職業:</strong> ${signup.job || '未設定'} | <strong>等級:</strong> ${signup.level || '?'}</p>
+                            ${isCurrentUser ? `
+                                <button onclick="cancelSignup(${raidId})" class="cancel-signup-btn" style="margin-top: 8px; padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                    ❌ 取消報名
+                                </button>
+                            ` : ''}
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             `;
         }
         
@@ -657,6 +664,9 @@ async function confirmSignup(raidId, characterId) {
         // 顯示成功訊息
         showSuccessMessage('✅ 報名成功！');
         
+        // 重新載入遠征列表和報名名單
+        await loadRaids();
+        
         // 如果報名名單已展開，重新載入
         const signupsDiv = document.getElementById(`signups-${raidId}`);
         if (signupsDiv && signupsDiv.classList.contains('show')) {
@@ -667,6 +677,35 @@ async function confirmSignup(raidId, characterId) {
         console.error('報名失敗:', error);
         closeModal('characterSelectModal');
         alert('報名失敗: ' + (error.message || JSON.stringify(error)));
+    }
+}
+
+// 取消報名
+async function cancelSignup(raidId) {
+    if (!confirm('確定要取消報名嗎？')) {
+        return;
+    }
+    
+    try {
+        await apiRequest(`/raids/${raidId}/signup`, {
+            method: 'DELETE'
+        });
+        
+        // 顯示成功訊息
+        showSuccessMessage('✅ 已取消報名');
+        
+        // 重新載入遠征列表和報名名單
+        await loadRaids();
+        
+        // 如果報名名單已展開，重新載入
+        const signupsDiv = document.getElementById(`signups-${raidId}`);
+        if (signupsDiv && signupsDiv.classList.contains('show')) {
+            await loadRaidSignups(raidId);
+        }
+        
+    } catch (error) {
+        console.error('取消報名失敗:', error);
+        alert('取消報名失敗: ' + (error.message || JSON.stringify(error)));
     }
 }
 
