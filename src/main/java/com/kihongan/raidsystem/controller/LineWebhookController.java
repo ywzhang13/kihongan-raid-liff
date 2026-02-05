@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Arrays;
+
 /**
  * LINE Webhook Controller
  * Handles incoming LINE events and logs group IDs
@@ -45,9 +47,13 @@ public class LineWebhookController {
             if ("!groupid".equalsIgnoreCase(messageText.trim())) {
                 try {
                     lineMessagingClient.replyMessage(
-                        event.getReplyToken(),
-                        com.linecorp.bot.model.message.TextMessage.builder()
-                            .text("群組 ID: " + groupId)
+                        com.linecorp.bot.model.ReplyMessage.builder()
+                            .replyToken(event.getReplyToken())
+                            .messages(Arrays.asList(
+                                com.linecorp.bot.model.message.TextMessage.builder()
+                                    .text("群組 ID: " + groupId)
+                                    .build()
+                            ))
                             .build()
                     ).get();
                 } catch (Exception e) {

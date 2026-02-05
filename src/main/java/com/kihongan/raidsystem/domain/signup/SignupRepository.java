@@ -125,4 +125,12 @@ public class SignupRepository {
         String sql = "DELETE FROM raid_signups WHERE raid_id = ?";
         jdbcTemplate.update(sql, raidId);
     }
+    
+    /**
+     * Deletes a signup by ID.
+     */
+    public void deleteById(Long id) {
+        String sql = "DELETE FROM raid_signups WHERE id = ?";
+        jdbcTemplate.update(sql, id);
+    }
 }

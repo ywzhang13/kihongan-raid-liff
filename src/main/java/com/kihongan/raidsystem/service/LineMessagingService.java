@@ -5,6 +5,7 @@ import com.linecorp.bot.model.PushMessage;
 import com.linecorp.bot.model.message.FlexMessage;
 import com.linecorp.bot.model.message.flex.container.Bubble;
 import com.linecorp.bot.model.message.flex.component.*;
+import com.linecorp.bot.model.message.flex.unit.FlexAlign;
 import com.linecorp.bot.model.message.flex.unit.FlexFontSize;
 import com.linecorp.bot.model.message.flex.unit.FlexLayout;
 import com.linecorp.bot.model.message.flex.unit.FlexMarginSize;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class LineMessagingService {
@@ -23,7 +26,7 @@ public class LineMessagingService {
     
     public LineMessagingService(
             LineMessagingClient lineMessagingClient,
-            @Value("${line.webhook.group-id}") String groupId) {
+            @Value("${line.webhook.group-id:}") String groupId) {
         this.lineMessagingClient = lineMessagingClient;
         this.groupId = groupId;
     }
@@ -102,6 +105,12 @@ public class LineMessagingService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm");
         String timeStr = startTime.format(formatter);
         
+        List<FlexComponent> bodyContents = Arrays.asList(
+                createInfoRow("👤 建立人", creatorName),
+                createInfoRow("⏰ 時間", timeStr),
+                subtitle != null && !subtitle.isEmpty() ? createInfoRow("📝 備註", subtitle) : null
+        ).stream().filter(c -> c != null).collect(Collectors.toList());
+        
         return Bubble.builder()
                 .header(Box.builder()
                         .layout(FlexLayout.VERTICAL)
@@ -129,13 +138,7 @@ public class LineMessagingService {
                                         .layout(FlexLayout.VERTICAL)
                                         .margin(FlexMarginSize.LG)
                                         .spacing(FlexMarginSize.SM)
-                                        .contents(Arrays.asList(
-                                                createInfoRow("👤 建立人", creatorName),
-                                                createInfoRow("⏰ 時間", timeStr),
-                                                subtitle != null && !subtitle.isEmpty() 
-                                                        ? createInfoRow("📝 備註", subtitle)
-                                                        : null
-                                        ).stream().filter(c -> c != null).toList())
+                                        .contents(bodyContents)
                                         .build()
                         ))
                         .build())
@@ -146,7 +149,7 @@ public class LineMessagingService {
                                         .text("點擊 LIFF 連結報名參加！")
                                         .size(FlexFontSize.SM)
                                         .color("#999999")
-                                        .align(FlexComponent.FlexAlign.CENTER)
+                                        .align(FlexAlign.CENTER)
                                         .build()
                         ))
                         .build())
@@ -211,7 +214,7 @@ public class LineMessagingService {
                                                                         .size(FlexFontSize.SM)
                                                                         .color(statusColor)
                                                                         .weight(Text.TextWeight.BOLD)
-                                                                        .align(FlexComponent.FlexAlign.END)
+                                                                        .align(FlexAlign.END)
                                                                         .build()
                                                         ))
                                                         .build()
@@ -273,7 +276,7 @@ public class LineMessagingService {
                                                                         .size(FlexFontSize.SM)
                                                                         .color(statusColor)
                                                                         .weight(Text.TextWeight.BOLD)
-                                                                        .align(FlexComponent.FlexAlign.END)
+                                                                        .align(FlexAlign.END)
                                                                         .build()
                                                         ))
                                                         .build()
@@ -287,7 +290,7 @@ public class LineMessagingService {
     /**
      * 建立資訊列
      */
-    private Box createInfoRow(String label, String value) {
+    private FlexComponent createInfoRow(String label, String value) {
         return Box.builder()
                 .layout(FlexLayout.HORIZONTAL)
                 .contents(Arrays.asList(
@@ -301,7 +304,7 @@ public class LineMessagingService {
                                 .text(value)
                                 .size(FlexFontSize.SM)
                                 .color("#111111")
-                                .align(FlexComponent.FlexAlign.END)
+                                .align(FlexAlign.END)
                                 .build()
                 ))
                 .build();
