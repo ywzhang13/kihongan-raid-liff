@@ -64,4 +64,19 @@ public class RaidScheduler {
     // public void testScheduler() {
     //     logger.info("Test scheduler running at: {}", java.time.LocalDateTime.now());
     // }
+    
+    /**
+     * Keep-alive task to prevent Render from sleeping.
+     * Runs every 10 minutes to keep the application active.
+     */
+    @Scheduled(fixedRate = 600000) // 10 minutes in milliseconds
+    public void keepAlive() {
+        try {
+            // Simple database query to keep connection alive
+            jdbcTemplate.queryForObject("SELECT 1", Integer.class);
+            logger.debug("Keep-alive ping successful");
+        } catch (Exception e) {
+            logger.warn("Keep-alive ping failed: {}", e.getMessage());
+        }
+    }
 }
