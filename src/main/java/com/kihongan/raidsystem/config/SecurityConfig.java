@@ -36,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/line/webhook").permitAll()
+                        .requestMatchers("/api/scheduler/**").permitAll()
                         .requestMatchers("/raids").permitAll()
                         .requestMatchers("/raids/*/signups").permitAll()
                         

@@ -79,4 +79,13 @@ public class RaidScheduler {
             logger.warn("Keep-alive ping failed: {}", e.getMessage());
         }
     }
+    
+    /**
+     * Manual trigger for weekly cleanup.
+     * Can be called via HTTP endpoint.
+     */
+    public void triggerWeeklyCleanup() {
+        logger.info("Manual weekly cleanup triggered");
+        clearWeeklyRaids();
+    }
 }
