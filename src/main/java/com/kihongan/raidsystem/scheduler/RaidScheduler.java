@@ -33,6 +33,9 @@ public class RaidScheduler {
      * - Day of month: * (any)
      * - Month: * (any)
      * - Day of week: THU (Thursday)
+     * 
+     * Note: This may not run reliably on Render free tier due to cold starts.
+     * Use the manual trigger endpoint with external cron service instead.
      */
     @Scheduled(cron = "0 0 8 * * THU", zone = "Asia/Taipei")
     @Transactional
@@ -57,35 +60,11 @@ public class RaidScheduler {
     }
     
     /**
-     * Test method - runs every minute for testing purposes.
-     * Comment out or remove in production.
-     */
-    // @Scheduled(cron = "0 * * * * *")
-    // public void testScheduler() {
-    //     logger.info("Test scheduler running at: {}", java.time.LocalDateTime.now());
-    // }
-    
-    /**
-     * Keep-alive task to prevent Render from sleeping.
-     * Runs every 10 minutes to keep the application active.
-     */
-    @Scheduled(fixedRate = 600000) // 10 minutes in milliseconds
-    public void keepAlive() {
-        try {
-            // Simple database query to keep connection alive
-            jdbcTemplate.queryForObject("SELECT 1", Integer.class);
-            logger.debug("Keep-alive ping successful");
-        } catch (Exception e) {
-            logger.warn("Keep-alive ping failed: {}", e.getMessage());
-        }
-    }
-    
-    /**
      * Manual trigger for weekly cleanup.
-     * Can be called via HTTP endpoint.
+     * Called by external cron service (e.g., cron-job.org).
      */
     public void triggerWeeklyCleanup() {
-        logger.info("Manual weekly cleanup triggered");
+        logger.info("Manual weekly cleanup triggered via HTTP endpoint");
         clearWeeklyRaids();
     }
 }
