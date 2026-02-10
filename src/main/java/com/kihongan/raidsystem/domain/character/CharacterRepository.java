@@ -83,24 +83,30 @@ public class CharacterRepository {
         String sql = """
                 INSERT INTO characters (user_id, name, job, level, is_default, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                RETURNING id
                 """;
         
         Instant now = Instant.now();
         character.setCreatedAt(now);
         character.setUpdatedAt(now);
         
-        Long id = jdbcTemplate.queryForObject(sql, Long.class,
-                character.getUserId(),
-                character.getName(),
-                character.getJob(),
-                character.getLevel(),
-                character.getIsDefault() != null ? character.getIsDefault() : false,
-                Timestamp.from(character.getCreatedAt()),
-                Timestamp.from(character.getUpdatedAt())
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, character.getUserId());
+            ps.setString(2, character.getName());
+            ps.setString(3, character.getJob());
+            if (character.getLevel() != null) {
+                ps.setInt(4, character.getLevel());
+            } else {
+                ps.setNull(4, java.sql.Types.INTEGER);
+            }
+            ps.setBoolean(5, character.getIsDefault() != null ? character.getIsDefault() : false);
+            ps.setTimestamp(6, Timestamp.from(character.getCreatedAt()));
+            ps.setTimestamp(7, Timestamp.from(character.getUpdatedAt()));
+            return ps;
+        }, keyHolder);
         
-        character.setId(id);
+        character.setId(keyHolder.getKey().longValue());
         return character;
     }
     

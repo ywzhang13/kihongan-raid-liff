@@ -73,12 +73,22 @@ public class AuthController {
     }
 
     private Long createUser(String lineUserId, String name, String picture) {
-        String sql = "INSERT INTO users (line_user_id, name, picture, created_at, updated_at) VALUES (?, ?, ?, ?, ?) RETURNING id";
+        String sql = "INSERT INTO users (line_user_id, name, picture, created_at, updated_at) VALUES (?, ?, ?, ?, ?)";
         
         Instant now = Instant.now();
         
-        return jdbcTemplate.queryForObject(sql, Long.class, 
-            lineUserId, name, picture, Timestamp.from(now), Timestamp.from(now));
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, lineUserId);
+            ps.setString(2, name);
+            ps.setString(3, picture);
+            ps.setTimestamp(4, Timestamp.from(now));
+            ps.setTimestamp(5, Timestamp.from(now));
+            return ps;
+        }, keyHolder);
+        
+        return keyHolder.getKey().longValue();
     }
 
     private void updateUser(Long userId, String name, String picture) {

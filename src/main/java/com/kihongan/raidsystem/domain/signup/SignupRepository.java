@@ -66,20 +66,22 @@ public class SignupRepository {
         String sql = """
                 INSERT INTO raid_signups (raid_id, character_id, status, created_at)
                 VALUES (?, ?, ?, ?)
-                RETURNING id
                 """;
         
         Instant now = Instant.now();
         signup.setCreatedAt(now);
         
-        Long id = jdbcTemplate.queryForObject(sql, Long.class,
-                signup.getRaidId(),
-                signup.getCharacterId(),
-                signup.getStatus(),
-                Timestamp.from(signup.getCreatedAt())
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, signup.getRaidId());
+            ps.setLong(2, signup.getCharacterId());
+            ps.setString(3, signup.getStatus());
+            ps.setTimestamp(4, Timestamp.from(signup.getCreatedAt()));
+            return ps;
+        }, keyHolder);
         
-        signup.setId(id);
+        signup.setId(keyHolder.getKey().longValue());
         return signup;
     }
     

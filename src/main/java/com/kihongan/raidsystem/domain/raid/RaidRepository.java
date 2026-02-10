@@ -50,9 +50,10 @@ public class RaidRepository {
     
     /**
      * Finds all raids ordered by start time.
+     * Only returns raids that haven't expired (start_time >= current time).
      */
     public List<Raid> findAllOrderByStartTime() {
-        String sql = "SELECT * FROM raids ORDER BY start_time ASC";
+        String sql = "SELECT * FROM raids WHERE start_time >= CURRENT_TIMESTAMP ORDER BY start_time ASC";
         return jdbcTemplate.query(sql, raidRowMapper);
     }
     
@@ -72,22 +73,24 @@ public class RaidRepository {
         String sql = """
                 INSERT INTO raids (title, subtitle, boss, start_time, created_by, created_at)
                 VALUES (?, ?, ?, ?, ?, ?)
-                RETURNING id
                 """;
         
         Instant now = Instant.now();
         raid.setCreatedAt(now);
         
-        Long id = jdbcTemplate.queryForObject(sql, Long.class,
-                raid.getTitle(),
-                raid.getSubtitle(),
-                raid.getBoss(),
-                Timestamp.from(raid.getStartTime()),
-                raid.getCreatedBy(),
-                Timestamp.from(raid.getCreatedAt())
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, raid.getTitle());
+            ps.setString(2, raid.getSubtitle());
+            ps.setString(3, raid.getBoss());
+            ps.setTimestamp(4, Timestamp.from(raid.getStartTime()));
+            ps.setLong(5, raid.getCreatedBy());
+            ps.setTimestamp(6, Timestamp.from(raid.getCreatedAt()));
+            return ps;
+        }, keyHolder);
         
-        raid.setId(id);
+        raid.setId(keyHolder.getKey().longValue());
         return raid;
     }
     
