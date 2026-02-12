@@ -68,8 +68,7 @@ async function initializeLiff() {
         
         showMessage('userStatus', `✅ 已登入: ${currentUser.name}`, 'success');
         
-        // 自動載入初始資料
-        await loadMyCharacters();
+        // 自動載入初始資料（預設顯示遠征列表）
         await loadRaids();
         
     } catch (error) {
