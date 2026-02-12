@@ -603,15 +603,24 @@ async function loadRaidSignups(raidId) {
 // 計算本周四 8:00
 function getThisWeekThursday() {
     const now = new Date();
-    const day = now.getDay(); // 0=週日, 1=週一, ..., 4=週四
-    const diff = day >= 4 ? 4 - day : 4 - day - 7; // 如果今天是週四或之後，取本週四；否則取上週四
+    const day = now.getDay(); // 0=週日, 1=週一, ..., 4=週四, ..., 6=週六
+    
+    // 計算距離本週四的天數差
+    let diff;
+    if (day < 4) {
+        // 週日到週三：取上週四
+        diff = day - 4 - 7;
+    } else {
+        // 週四到週六：取本週四
+        diff = 4 - day;
+    }
     
     const thursday = new Date(now);
     thursday.setDate(now.getDate() + diff);
     thursday.setHours(8, 0, 0, 0);
     
-    // 如果現在時間早於本週四 8:00，則取上週四
-    if (now < thursday) {
+    // 如果是週四但時間早於 8:00，則取上週四
+    if (day === 4 && now.getHours() < 8) {
         thursday.setDate(thursday.getDate() - 7);
     }
     
