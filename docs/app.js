@@ -152,8 +152,6 @@ function switchTab(tabName) {
         loadMyCharacters();
     } else if (tabName === 'raids') {
         loadRaids();
-        loadMyCharacters(); // 載入角色列表供報名使用
-        loadCharactersForRaidCreation(); // 載入角色到建立遠征的下拉選單
     }
 }
 
@@ -405,6 +403,21 @@ async function saveCharacterEdit() {
 }
 
 // ==================== 遠征管理 ====================
+
+// 開啟建立遠征 Modal
+async function openCreateRaidModal() {
+    // 清空表單
+    document.getElementById('raidBoss').value = '';
+    document.getElementById('raidSubtitle').value = '';
+    document.getElementById('raidStartTime').value = '';
+    document.getElementById('raidCharacter').value = '';
+    
+    // 載入角色列表
+    await loadCharactersForRaidCreation();
+    
+    // 顯示 Modal
+    document.getElementById('createRaidModal').classList.add('show');
+}
 
 async function loadRaids() {
     try {
@@ -846,7 +859,7 @@ async function loadCharactersForRaidCreation() {
     }
 }
 
-async function createRaid(event) {
+async function createRaid() {
     // 防止重複提交
     const submitButton = document.getElementById('createRaidBtn');
     if (submitButton.disabled) {
@@ -892,11 +905,8 @@ async function createRaid(event) {
             body: JSON.stringify(data)
         });
         
-        // 清空表單
-        document.getElementById('raidBoss').value = '';
-        document.getElementById('raidSubtitle').value = '';
-        document.getElementById('raidStartTime').value = '';
-        document.getElementById('raidCharacter').value = '';
+        // 關閉 Modal
+        closeModal('createRaidModal');
         
         // 顯示成功訊息
         showSuccessMessage('✅ 遠征隊建立成功！');
@@ -910,7 +920,7 @@ async function createRaid(event) {
     } finally {
         // 恢復按鈕狀態
         submitButton.disabled = false;
-        submitButton.textContent = '建立遠征';
+        submitButton.textContent = '⚔️ 建立遠征';
     }
 }
 

@@ -588,44 +588,56 @@
             
             <!-- 遠征管理區 -->
             <div id="raids" class="section">
-                <div class="week-info">
+                <div class="week-info" style="background: #e8f4f8; padding: 12px; border-radius: 6px; margin-bottom: 20px; text-align: center; color: #2c3e50; font-weight: 600;">
                     📅 本周遠征（每週四上午 8:00 重製）
                 </div>
                 
-                <h3>建立新遠征</h3>
-                <div class="form-group">
-                    <label>Boss *</label>
-                    <select id="raidBoss">
-                        <option value="">請選擇 Boss</option>
-                        <option value="拉圖斯">拉圖斯</option>
-                        <option value="殘暴炎魔">殘暴炎魔</option>
-                        <option value="困難拉圖斯">困難拉圖斯</option>
-                        <option value="闇黑龍王">闇黑龍王</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>備註</label>
-                    <input type="text" id="raidSubtitle">
-                </div>
-                <div class="form-group">
-                    <label>開始時間 *</label>
-                    <input type="datetime-local" id="raidStartTime">
-                </div>
-                <div class="form-group">
-                    <label>參加角色 *</label>
-                    <select id="raidCharacter">
-                        <option value="">請選擇角色</option>
-                    </select>
-                </div>
-                <button id="createRaidBtn" onclick="createRaid(event)">建立遠征</button>
-                
-                <hr style="margin: 30px 0;">
-                
                 <div class="section-header">
                     <h3>本周遠征列表</h3>
-                    <button onclick="loadRaids()">🔄 重新載入</button>
+                    <div>
+                        <button onclick="openCreateRaidModal()">➕ 建立遠征</button>
+                        <button onclick="loadRaids()">🔄 重新載入</button>
+                    </div>
                 </div>
                 <div id="raidsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 建立遠征 Modal -->
+    <div id="createRaidModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚔️ 建立新遠征</h2>
+                <button class="close-btn" onclick="closeModal('createRaidModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Boss *</label>
+                <select id="raidBoss">
+                    <option value="">請選擇 Boss</option>
+                    <option value="拉圖斯">拉圖斯</option>
+                    <option value="殘暴炎魔">殘暴炎魔</option>
+                    <option value="困難拉圖斯">困難拉圖斯</option>
+                    <option value="闇黑龍王">闇黑龍王</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>備註</label>
+                <input type="text" id="raidSubtitle" placeholder="例如：需要主教">
+            </div>
+            <div class="form-group">
+                <label>開始時間 *</label>
+                <input type="datetime-local" id="raidStartTime">
+            </div>
+            <div class="form-group">
+                <label>參加角色 *</label>
+                <select id="raidCharacter">
+                    <option value="">請選擇角色</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="createRaidBtn" onclick="createRaid()" style="flex: 1;">⚔️ 建立遠征</button>
+                <button onclick="closeModal('createRaidModal')" style="flex: 1; background: #95a5a6;">取消</button>
             </div>
         </div>
     </div>
