@@ -550,6 +550,8 @@ async function loadRaidSignups(raidId) {
     const signupsDiv = document.getElementById(`signups-${raidId}`);
     
     try {
+        signupsDiv.innerHTML = '<div class="signups-loading">載入中...</div>';
+        
         const signups = await apiRequest(`/raids/${raidId}/signups`, { noAuth: true });
         
         if (signups.length === 0) {
@@ -592,7 +594,7 @@ async function loadRaidSignups(raidId) {
         signupsDiv.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">❌</div>
-                <p>載入失敗</p>
+                <p>載入失敗: ${error.message || '請稍後再試'}</p>
             </div>
         `;
     }

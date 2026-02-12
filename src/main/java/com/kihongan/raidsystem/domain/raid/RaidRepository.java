@@ -90,7 +90,9 @@ public class RaidRepository {
             return ps;
         }, keyHolder);
         
-        raid.setId(keyHolder.getKey().longValue());
+        // PostgreSQL returns all columns, so we need to get the 'id' specifically
+        Number key = (Number) keyHolder.getKeys().get("id");
+        raid.setId(key.longValue());
         return raid;
     }
     

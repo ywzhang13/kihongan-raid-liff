@@ -106,7 +106,9 @@ public class CharacterRepository {
             return ps;
         }, keyHolder);
         
-        character.setId(keyHolder.getKey().longValue());
+        // PostgreSQL returns all columns, so we need to get the 'id' specifically
+        Number key = (Number) keyHolder.getKeys().get("id");
+        character.setId(key.longValue());
         return character;
     }
     

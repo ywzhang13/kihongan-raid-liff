@@ -81,7 +81,9 @@ public class SignupRepository {
             return ps;
         }, keyHolder);
         
-        signup.setId(keyHolder.getKey().longValue());
+        // PostgreSQL returns all columns, so we need to get the 'id' specifically
+        Number key = (Number) keyHolder.getKeys().get("id");
+        signup.setId(key.longValue());
         return signup;
     }
     
