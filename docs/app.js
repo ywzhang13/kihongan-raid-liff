@@ -225,6 +225,18 @@ async function apiRequest(endpoint, options = {}) {
 
 // ==================== 角色管理 ====================
 
+// 開啟建立角色 Modal
+function openCreateCharacterModal() {
+    // 清空表單
+    document.getElementById('charName').value = '';
+    document.getElementById('charJob').value = '';
+    document.getElementById('charLevel').value = '';
+    document.getElementById('charIsDefault').checked = false;
+    
+    // 顯示 Modal
+    document.getElementById('createCharacterModal').classList.add('show');
+}
+
 async function loadMyCharacters() {
     try {
         const characters = await apiRequest('/me/characters');
@@ -280,23 +292,23 @@ async function createCharacter() {
             isDefault
         };
         
-        const result = await apiRequest('/me/characters', {
+        await apiRequest('/me/characters', {
             method: 'POST',
             body: JSON.stringify(data)
         });
         
-        // 清空表單
-        document.getElementById('charName').value = '';
-        document.getElementById('charJob').value = '';
-        document.getElementById('charLevel').value = '';
-        document.getElementById('charIsDefault').checked = false;
+        // 關閉 Modal
+        closeModal('createCharacterModal');
+        
+        // 顯示成功訊息
+        showSuccessMessage('✅ 角色建立成功！');
         
         // 重新載入列表
         loadMyCharacters();
         
     } catch (error) {
         console.error('建立角色失敗:', error);
-        showResponse('charactersResponse', error, true);
+        alert('建立角色失敗: ' + (error.error || error.message || JSON.stringify(error)));
     }
 }
 
@@ -841,30 +853,30 @@ async function createRaid(event) {
         return;
     }
     
+    const boss = document.getElementById('raidBoss').value.trim();
+    const subtitle = document.getElementById('raidSubtitle').value.trim();
+    const startTime = document.getElementById('raidStartTime').value;
+    const characterId = document.getElementById('raidCharacter').value;
+    
+    // 驗證輸入（在禁用按鈕之前）
+    if (!boss) {
+        alert('請選擇 Boss');
+        return;
+    }
+    
+    if (!startTime) {
+        alert('請選擇開始時間');
+        return;
+    }
+    
+    if (!characterId) {
+        alert('請選擇參加角色');
+        return;
+    }
+    
     try {
-        const boss = document.getElementById('raidBoss').value.trim();
-        const subtitle = document.getElementById('raidSubtitle').value.trim();
-        const startTime = document.getElementById('raidStartTime').value;
-        const characterId = document.getElementById('raidCharacter').value;
-        
-        if (!boss) {
-            alert('請選擇 Boss');
-            return;
-        }
-        
-        if (!startTime) {
-            alert('請選擇開始時間');
-            return;
-        }
-        
-        if (!characterId) {
-            alert('請選擇參加角色');
-            return;
-        }
-        
         // 禁用按鈕並顯示 loading
         submitButton.disabled = true;
-        const originalText = submitButton.textContent;
         submitButton.textContent = '⏳ 建立中...';
         
         const data = {
@@ -875,7 +887,7 @@ async function createRaid(event) {
             characterId: parseInt(characterId)
         };
         
-        const result = await apiRequest('/raids', {
+        await apiRequest('/raids', {
             method: 'POST',
             body: JSON.stringify(data)
         });

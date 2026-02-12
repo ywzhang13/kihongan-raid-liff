@@ -576,56 +576,12 @@
             
             <!-- 角色管理區 -->
             <div id="characters" class="section active">
-                <h3>建立新角色</h3>
-                <div class="form-group">
-                    <label>角色名稱 *</label>
-                    <input type="text" id="charName">
-                </div>
-                <div class="form-group">
-                    <label>職業</label>
-                    <select id="charJob">
-                        <option value="">請選擇職業</option>
-                        <optgroup label="劍士類">
-                            <option value="英雄">英雄</option>
-                            <option value="黑騎士">黑騎士</option>
-                            <option value="聖騎士">聖騎士</option>
-                        </optgroup>
-                        <optgroup label="弓箭手類">
-                            <option value="箭神">箭神</option>
-                            <option value="神射手">神射手</option>
-                        </optgroup>
-                        <optgroup label="法師類">
-                            <option value="主教">主教</option>
-                            <option value="冰雷大魔導士">冰雷大魔導士</option>
-                            <option value="火毒大魔導士">火毒大魔導士</option>
-                        </optgroup>
-                        <optgroup label="盜賊類">
-                            <option value="暗影神偷">暗影神偷</option>
-                            <option value="夜使者">夜使者</option>
-                        </optgroup>
-                        <optgroup label="海盜類">
-                            <option value="拳霸">拳霸</option>
-                            <option value="槍神">槍神</option>
-                        </optgroup>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>等級</label>
-                    <input type="number" id="charLevel" min="1">
-                </div>
-                <div class="form-group">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="charIsDefault" style="width: auto; cursor: pointer;">
-                        <span>⭐ 設為預設角色</span>
-                    </label>
-                </div>
-                <button onclick="createCharacter()">建立角色</button>
-                
-                <hr style="margin: 30px 0;">
-                
                 <div class="section-header">
                     <h3>我的角色列表</h3>
-                    <button onclick="loadMyCharacters()">🔄 重新載入</button>
+                    <div>
+                        <button onclick="openCreateCharacterModal()">➕ 建立角色</button>
+                        <button onclick="loadMyCharacters()">🔄 重新載入</button>
+                    </div>
                 </div>
                 <div id="charactersList"></div>
             </div>
@@ -670,6 +626,62 @@
                     <button onclick="loadRaids()">🔄 重新載入</button>
                 </div>
                 <div id="raidsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 建立角色 Modal -->
+    <div id="createCharacterModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ 建立新角色</h2>
+                <button class="close-btn" onclick="closeModal('createCharacterModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>角色名稱 *</label>
+                <input type="text" id="charName">
+            </div>
+            <div class="form-group">
+                <label>職業</label>
+                <select id="charJob">
+                    <option value="">請選擇職業</option>
+                    <optgroup label="劍士類">
+                        <option value="英雄">英雄</option>
+                        <option value="黑騎士">黑騎士</option>
+                        <option value="聖騎士">聖騎士</option>
+                    </optgroup>
+                    <optgroup label="弓箭手類">
+                        <option value="箭神">箭神</option>
+                        <option value="神射手">神射手</option>
+                    </optgroup>
+                    <optgroup label="法師類">
+                        <option value="主教">主教</option>
+                        <option value="冰雷大魔導士">冰雷大魔導士</option>
+                        <option value="火毒大魔導士">火毒大魔導士</option>
+                    </optgroup>
+                    <optgroup label="盜賊類">
+                        <option value="暗影神偷">暗影神偷</option>
+                        <option value="夜使者">夜使者</option>
+                    </optgroup>
+                    <optgroup label="海盜類">
+                        <option value="拳霸">拳霸</option>
+                        <option value="槍神">槍神</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>等級</label>
+                <input type="number" id="charLevel" min="1">
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="charIsDefault" style="width: auto; cursor: pointer;">
+                    <span>⭐ 設為預設角色</span>
+                </label>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="createCharacter()" style="flex: 1;">💾 建立角色</button>
+                <button onclick="closeModal('createCharacterModal')" style="flex: 1; background: #95a5a6;">取消</button>
             </div>
         </div>
     </div>
