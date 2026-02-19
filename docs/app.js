@@ -508,7 +508,7 @@ function createRaidCard(raid) {
     const weekDay = getWeekDayName(raidDate);
     
     return `
-        <div class="raid-card" id="raid-${raid.id}">
+        <div class="raid-card" id="raid-${raid.id}" onclick="handleRaidCardClick(event, ${raid.id})" style="cursor: pointer;">
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <h4>🎯 ${raid.title}</h4>
                 <span class="signup-count ${isFull ? 'full' : ''}" style="${isFull ? 'background: #e74c3c;' : ''}">
@@ -529,11 +529,10 @@ function createRaidCard(raid) {
                 </div>
                 ${raid.subtitle ? `<div class="raid-info-item"><strong>📝 備註:</strong> ${raid.subtitle}</div>` : ''}
             </div>
-            <div class="action-buttons">
+            <div class="action-buttons" onclick="event.stopPropagation()">
                 <button onclick="signupForRaid(${raid.id})" ${isFull ? 'disabled' : ''}>
                     ${isFull ? '❌ 已滿員' : '✅ 我要參加'}
                 </button>
-                <button onclick="toggleRaidSignups(${raid.id})">👥 查看報名</button>
                 <button onclick="deleteRaid(${raid.id})" class="danger">🗑️ 刪除</button>
             </div>
             <div class="raid-signups" id="signups-${raid.id}">
@@ -541,6 +540,13 @@ function createRaidCard(raid) {
             </div>
         </div>
     `;
+}
+
+// 點擊卡片展開/收合報名名單（忽略按鈕點擊）
+function handleRaidCardClick(event, raidId) {
+    // 如果點擊的是按鈕，不處理
+    if (event.target.tagName === 'BUTTON') return;
+    toggleRaidSignups(raidId);
 }
 
 function updateRaidCard(raid) {
