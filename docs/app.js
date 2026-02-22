@@ -630,29 +630,24 @@ async function loadRaidSignups(raidId) {
     }
 }
 
-// 計算本周四 8:00
+// 計算本周四 8:00（遠征週期：週四 8:00 ~ 下週四 8:00）
 function getThisWeekThursday() {
     const now = new Date();
     const day = now.getDay(); // 0=週日, 1=週一, ..., 4=週四, ..., 6=週六
+    const hour = now.getHours();
     
-    // 計算距離本週四的天數差
-    let diff;
-    if (day < 4) {
-        // 週日到週三：取上週四
-        diff = day - 4 - 7;
-    } else {
-        // 週四到週六：取本週四
-        diff = 4 - day;
+    // 計算從「現在」到「最近一個週四 8:00」的天數差
+    // 週四=4, 週五=5, 週六=6, 週日=0, 週一=1, 週二=2, 週三=3
+    let daysBack = (day - 4 + 7) % 7; // 距離上一個週四的天數
+    
+    // 如果今天是週四但還沒到 8:00，算上週四
+    if (daysBack === 0 && hour < 8) {
+        daysBack = 7;
     }
     
     const thursday = new Date(now);
-    thursday.setDate(now.getDate() + diff);
+    thursday.setDate(now.getDate() - daysBack);
     thursday.setHours(8, 0, 0, 0);
-    
-    // 如果是週四但時間早於 8:00，則取上週四
-    if (day === 4 && now.getHours() < 8) {
-        thursday.setDate(thursday.getDate() - 7);
-    }
     
     return thursday;
 }
