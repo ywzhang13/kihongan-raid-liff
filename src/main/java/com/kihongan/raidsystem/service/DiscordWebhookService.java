@@ -19,8 +19,7 @@ public class DiscordWebhookService {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-    public DiscordWebhookService(
-            @Value("${discord.webhook.url:}") String webhookUrl) {
+    public DiscordWebhookService(@Value("${discord.webhook.url:}") String webhookUrl) {
         this.webhookUrl = webhookUrl;
         this.httpClient = HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper();
@@ -30,9 +29,6 @@ public class DiscordWebhookService {
         return webhookUrl != null && !webhookUrl.isEmpty();
     }
 
-    /**
-     * 遠征隊建立通知
-     */
     public void sendRaidCreatedNotification(String raidTitle, String creatorName,
             LocalDateTime startTime, String subtitle, String characterName,
             String job, Integer level) {
@@ -44,7 +40,7 @@ public class DiscordWebhookService {
 
         Map<String, Object> embed = new LinkedHashMap<>();
         embed.put("title", "⚔️ 新遠征隊：" + raidTitle);
-        embed.put("color", 6717674); // #667eea
+        embed.put("color", 6717674);
 
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(makeField("👤 建立人", creatorName, true));
@@ -59,53 +55,41 @@ public class DiscordWebhookService {
         }
         embed.put("fields", fields);
         embed.put("footer", Map.of("text", "KiHongan 遠征報名系統"));
-
         sendEmbed(embed);
     }
 
-    /**
-     * 報名通知
-     */
     public void sendSignupNotification(String raidTitle, String userName,
             String characterName, String job, Integer level,
             int currentCount, int maxCount, String creatorName) {
         if (!isEnabled()) return;
-
         String jobLevel = (job != null ? job : "未設定") + (level != null ? " Lv." + level : "");
         boolean isFull = currentCount >= maxCount;
-
         Map<String, Object> embed = new LinkedHashMap<>();
         embed.put("title", "✅ 報名成功：" + raidTitle);
-        embed.put("color", isFull ? 15277667 : 2600544); // red if full, green otherwise
-
+        embed.put("color", isFull ? 15277667 : 2600544);
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(makeField("🎯 隊長", creatorName, true));
         fields.add(makeField("👤 玩家", userName, true));
         fields.add(makeField("⚔️ 角色", characterName + " (" + jobLevel + ")", false));
         fields.add(makeField("👥 人數", currentCount + "/" + maxCount + " 人" + (isFull ? " 🔴 已滿員" : ""), true));
         embed.put("fields", fields);
-
+        embed.put("footer", Map.of("text", "KiHongan 遠征報名系統"));
         sendEmbed(embed);
     }
 
-    /**
-     * 取消報名通知
-     */
     public void sendCancelSignupNotification(String raidTitle, String userName,
             String characterName, int currentCount, int maxCount, String creatorName) {
         if (!isEnabled()) return;
-
         Map<String, Object> embed = new LinkedHashMap<>();
         embed.put("title", "❌ 取消報名：" + raidTitle);
-        embed.put("color", 15158332); // #e74c3c
-
+        embed.put("color", 15158332);
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(makeField("🎯 隊長", creatorName, true));
         fields.add(makeField("👤 玩家", userName, true));
         fields.add(makeField("⚔️ 角色", characterName, false));
         fields.add(makeField("👥 人數", currentCount + "/" + maxCount + " 人", true));
         embed.put("fields", fields);
-
+        embed.put("footer", Map.of("text", "KiHongan 遠征報名系統"));
         sendEmbed(embed);
     }
 
@@ -118,21 +102,31 @@ public class DiscordWebhookService {
     }
 
     private void sendEmbed(Map<String, Object> embed) {
+        sendEmbedWithRetry(embed, 0);
+    }
+
+    private void sendEmbedWithRetry(Map<String, Object> embed, int attempt) {
+        if (attempt >= 3) {
+            System.err.println("Discord webhook failed after 3 attempts, giving up.");
+            return;
+        }
         try {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("embeds", List.of(embed));
-
             String json = objectMapper.writeValueAsString(payload);
-
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(webhookUrl))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
-
             httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenAccept(response -> {
-                        if (response.statusCode() >= 400) {
+                        if (response.statusCode() == 429) {
+                            long retryAfter = 2000L * (attempt + 1);
+                            System.err.println("Discord rate limited, retrying in " + retryAfter + "ms (attempt " + (attempt + 1) + ")");
+                            try { Thread.sleep(retryAfter); } catch (InterruptedException ignored) {}
+                            sendEmbedWithRetry(embed, attempt + 1);
+                        } else if (response.statusCode() >= 400) {
                             System.err.println("Discord webhook failed: " + response.statusCode() + " " + response.body());
                         }
                     });
