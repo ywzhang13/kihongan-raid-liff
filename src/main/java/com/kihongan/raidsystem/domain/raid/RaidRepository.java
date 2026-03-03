@@ -50,10 +50,10 @@ public class RaidRepository {
     
     /**
      * Finds all raids ordered by start time.
-     * Only returns raids that haven't expired (start_time >= current time).
+     * Only returns raids that haven't expired (start_time >= current time in Asia/Taipei).
      */
     public List<Raid> findAllOrderByStartTime() {
-        String sql = "SELECT * FROM raids WHERE start_time >= CURRENT_TIMESTAMP ORDER BY start_time ASC";
+        String sql = "SELECT * FROM raids WHERE start_time >= (NOW() AT TIME ZONE 'Asia/Taipei')::date::timestamptz ORDER BY start_time ASC";
         return jdbcTemplate.query(sql, raidRowMapper);
     }
     

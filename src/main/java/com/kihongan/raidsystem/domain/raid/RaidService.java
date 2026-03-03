@@ -4,6 +4,7 @@ import com.kihongan.raidsystem.domain.raid.dto.CreateRaidRequest;
 import com.kihongan.raidsystem.domain.raid.dto.RaidDTO;
 import com.kihongan.raidsystem.domain.signup.SignupRepository;
 import com.kihongan.raidsystem.exception.ValidationException;
+import com.kihongan.raidsystem.service.DiscordWebhookService;
 import com.kihongan.raidsystem.service.LineMessagingService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -26,12 +27,14 @@ public class RaidService {
     private final SignupRepository signupRepository;
     private final JdbcTemplate jdbcTemplate;
     private final LineMessagingService lineMessagingService;
+    private final DiscordWebhookService discordWebhookService;
     
-    public RaidService(RaidRepository raidRepository, SignupRepository signupRepository, JdbcTemplate jdbcTemplate, LineMessagingService lineMessagingService) {
+    public RaidService(RaidRepository raidRepository, SignupRepository signupRepository, JdbcTemplate jdbcTemplate, LineMessagingService lineMessagingService, DiscordWebhookService discordWebhookService) {
         this.raidRepository = raidRepository;
         this.signupRepository = signupRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.lineMessagingService = lineMessagingService;
+        this.discordWebhookService = discordWebhookService;
     }
     
     // For auto-signup after raid creation
@@ -125,7 +128,7 @@ public class RaidService {
             }
         }
         
-        // Send combined LINE notification
+        // Send notifications
         try {
             String creatorName = jdbcTemplate.queryForObject(
                 "SELECT name FROM users WHERE id = ?",
@@ -135,34 +138,30 @@ public class RaidService {
             
             LocalDateTime startTime = LocalDateTime.ofInstant(savedRaid.getStartTime(), ZoneId.of("Asia/Taipei"));
             
-            System.out.println("DEBUG: Preparing to send notification - characterName: " + characterName);
-            
-            // Send combined notification if creator joined, otherwise just raid created
-            if (characterName != null) {
-                System.out.println("DEBUG: Sending combined notification");
-                lineMessagingService.sendRaidCreatedWithSignupNotification(
-                    savedRaid.getTitle(),
-                    creatorName,
-                    startTime,
-                    savedRaid.getSubtitle(),
-                    characterName,
-                    characterJob,
-                    characterLevel
-                );
-            } else {
-                System.out.println("DEBUG: Sending raid created notification only");
-                lineMessagingService.sendRaidCreatedNotification(
-                    savedRaid.getTitle(),
-                    creatorName,
-                    startTime,
-                    savedRaid.getSubtitle()
-                );
+            // LINE notification
+            try {
+                if (characterName != null) {
+                    lineMessagingService.sendRaidCreatedWithSignupNotification(
+                        savedRaid.getTitle(), creatorName, startTime,
+                        savedRaid.getSubtitle(), characterName, characterJob, characterLevel);
+                } else {
+                    lineMessagingService.sendRaidCreatedNotification(
+                        savedRaid.getTitle(), creatorName, startTime, savedRaid.getSubtitle());
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to send LINE notification: " + e.getMessage());
             }
-            System.out.println("DEBUG: Notification sent successfully");
+            
+            // Discord notification
+            try {
+                discordWebhookService.sendRaidCreatedNotification(
+                    savedRaid.getTitle(), creatorName, startTime,
+                    savedRaid.getSubtitle(), characterName, characterJob, characterLevel);
+            } catch (Exception e) {
+                System.err.println("Failed to send Discord notification: " + e.getMessage());
+            }
         } catch (Exception e) {
-            // Log but don't fail the operation
             System.err.println("Failed to send raid created notification: " + e.getMessage());
-            e.printStackTrace();
         }
         
         return savedRaid;

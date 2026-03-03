@@ -435,40 +435,17 @@ function displayRaids(raids) {
     const container = document.getElementById('raidsList');
     if (!container) return;
     
-    // 過濾本周的遠征（週四 8:00 重製）
-    const now = new Date();
-    const weekStart = getThisWeekThursday();
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-    
-    const thisWeekRaids = raids.filter(raid => {
-        const raidDate = new Date(raid.startTime);
-        return raidDate >= weekStart && raidDate < weekEnd;
-    });
-    
-    if (thisWeekRaids.length === 0) {
-        container.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">本周沒有遠征活動</p>';
+    // 後端已過濾過期遠征，直接顯示全部
+    if (raids.length === 0) {
+        container.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">目前沒有遠征活動</p>';
         return;
     }
     
-    // 按照週四到週三的順序排序
-    thisWeekRaids.sort((a, b) => {
-        const dateA = new Date(a.startTime);
-        const dateB = new Date(b.startTime);
-        
-        // 計算從週四開始的天數順序
-        const orderA = getWeekDayOrder(dateA);
-        const orderB = getWeekDayOrder(dateB);
-        
-        // 先按星期排序，再按時間排序
-        if (orderA !== orderB) {
-            return orderA - orderB;
-        }
-        return dateA - dateB;
-    });
+    // 按時間排序
+    raids.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
     
     // 為每個遠征載入報名人數
-    thisWeekRaids.forEach(async (raid) => {
+    raids.forEach(async (raid) => {
         try {
             const signups = await apiRequest(`/raids/${raid.id}/signups`, { noAuth: true });
             raid.signupCount = signups.length;
@@ -478,21 +455,7 @@ function displayRaids(raids) {
         }
     });
     
-    container.innerHTML = thisWeekRaids.map(raid => createRaidCard(raid)).join('');
-}
-
-// 取得星期幾的排序順序（週四=0, 週五=1, ..., 週三=6）
-function getWeekDayOrder(date) {
-    const day = date.getDay(); // 0=週日, 1=週一, ..., 6=週六
-    // 轉換為週四開始的順序：週四=0, 週五=1, 週六=2, 週日=3, 週一=4, 週二=5, 週三=6
-    if (day === 4) return 0; // 週四
-    if (day === 5) return 1; // 週五
-    if (day === 6) return 2; // 週六
-    if (day === 0) return 3; // 週日
-    if (day === 1) return 4; // 週一
-    if (day === 2) return 5; // 週二
-    if (day === 3) return 6; // 週三
-    return 0;
+    container.innerHTML = raids.map(raid => createRaidCard(raid)).join('');
 }
 
 // 取得星期幾的中文名稱
@@ -628,28 +591,6 @@ async function loadRaidSignups(raidId) {
             </div>
         `;
     }
-}
-
-// 計算本周四 8:00（遠征週期：週四 8:00 ~ 下週四 8:00）
-function getThisWeekThursday() {
-    const now = new Date();
-    const day = now.getDay(); // 0=週日, 1=週一, ..., 4=週四, ..., 6=週六
-    const hour = now.getHours();
-    
-    // 計算從「現在」到「最近一個週四 8:00」的天數差
-    // 週四=4, 週五=5, 週六=6, 週日=0, 週一=1, 週二=2, 週三=3
-    let daysBack = (day - 4 + 7) % 7; // 距離上一個週四的天數
-    
-    // 如果今天是週四但還沒到 8:00，算上週四
-    if (daysBack === 0 && hour < 8) {
-        daysBack = 7;
-    }
-    
-    const thursday = new Date(now);
-    thursday.setDate(now.getDate() - daysBack);
-    thursday.setHours(8, 0, 0, 0);
-    
-    return thursday;
 }
 
 // 報名遠征

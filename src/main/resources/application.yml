@@ -28,6 +28,10 @@ line:
   webhook:
     group-id: ${LINE_GROUP_ID:}
 
+discord:
+  webhook:
+    url: ${DISCORD_WEBHOOK_URL:}
+
 app:
   jwt:
     secret: ${JWT_SECRET:your-secret-key-must-be-at-least-32-characters-long}

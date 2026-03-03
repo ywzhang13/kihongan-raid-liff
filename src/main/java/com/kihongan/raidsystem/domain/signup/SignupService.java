@@ -2,31 +2,36 @@ package com.kihongan.raidsystem.domain.signup;
 
 import com.kihongan.raidsystem.domain.character.Character;
 import com.kihongan.raidsystem.domain.character.CharacterRepository;
+import com.kihongan.raidsystem.domain.raid.Raid;
 import com.kihongan.raidsystem.domain.raid.RaidRepository;
 import com.kihongan.raidsystem.exception.AuthorizationException;
 import com.kihongan.raidsystem.exception.NotFoundException;
 import com.kihongan.raidsystem.exception.ValidationException;
+import com.kihongan.raidsystem.service.DiscordWebhookService;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * Service layer for Signup business logic.
- * Handles validation and authorization for raid signups.
- */
 @Service
 public class SignupService {
     
     private final SignupRepository signupRepository;
     private final CharacterRepository characterRepository;
     private final RaidRepository raidRepository;
+    private final DiscordWebhookService discordWebhookService;
+    private final JdbcTemplate jdbcTemplate;
     
     public SignupService(SignupRepository signupRepository,
                         CharacterRepository characterRepository,
-                        RaidRepository raidRepository) {
+                        RaidRepository raidRepository,
+                        DiscordWebhookService discordWebhookService,
+                        JdbcTemplate jdbcTemplate) {
         this.signupRepository = signupRepository;
         this.characterRepository = characterRepository;
         this.raidRepository = raidRepository;
+        this.discordWebhookService = discordWebhookService;
+        this.jdbcTemplate = jdbcTemplate;
     }
     
     /**
@@ -71,6 +76,25 @@ public class SignupService {
         
         Signup savedSignup = signupRepository.save(signup);
         
+        // Send Discord notification for signup
+        if (sendNotification) {
+            try {
+                Raid raid = raidRepository.findById(raidId).orElseThrow();
+                String userName = jdbcTemplate.queryForObject(
+                    "SELECT name FROM users WHERE id = ?", String.class, userId);
+                String creatorName = jdbcTemplate.queryForObject(
+                    "SELECT name FROM users WHERE id = ?", String.class, raid.getCreatedBy());
+                int currentCount = signupRepository.findByRaidIdWithDetails(raidId).size();
+                
+                discordWebhookService.sendSignupNotification(
+                    raid.getTitle(), userName, character.getName(),
+                    character.getJob(), character.getLevel(),
+                    currentCount, 6, creatorName);
+            } catch (Exception e) {
+                System.err.println("Failed to send Discord signup notification: " + e.getMessage());
+            }
+        }
+        
         return savedSignup;
     }
     
@@ -97,6 +121,20 @@ public class SignupService {
         
         // Delete the signup
         signupRepository.deleteById(userSignup.getSignupId());
+        
+        // Send Discord notification for cancel
+        try {
+            Raid raid = raidRepository.findById(raidId).orElseThrow();
+            String creatorName = jdbcTemplate.queryForObject(
+                "SELECT name FROM users WHERE id = ?", String.class, raid.getCreatedBy());
+            
+            discordWebhookService.sendCancelSignupNotification(
+                raid.getTitle(), userSignup.getUserName(),
+                userSignup.getCharacterName(),
+                signups.size() - 1, 6, creatorName);
+        } catch (Exception e) {
+            System.err.println("Failed to send Discord cancel notification: " + e.getMessage());
+        }
     }
     
     // Validation helpers
