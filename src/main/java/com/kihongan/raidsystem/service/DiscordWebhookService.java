@@ -57,14 +57,14 @@ public class DiscordWebhookService {
         embed.put("description", desc.toString());
 
         List<Map<String, Object>> fields = new ArrayList<>();
-        fields.add(makeField("👤 建立人", creatorName, true));
-        fields.add(makeField("⏰ 時間", timeStr + " " + weekDay, true));
+        fields.add(makeField("👤 建立人", creatorName + "\n\u200b", true));
+        fields.add(makeField("⏰ 時間", timeStr + " " + weekDay + "\n\u200b", true));
         if (characterName != null) {
             String jobLevel = (job != null ? job : "未設定") + (level != null ? " Lv." + level : "");
             fields.add(makeField("\u200b", "\u200b", true)); // spacer
-            fields.add(makeField("⚔️ 參加角色", characterName, true));
-            fields.add(makeField("🎮 職業", jobLevel, true));
-            fields.add(makeField("👥 人數", "1 / 6", true));
+            fields.add(makeField("⚔️ 參加角色", characterName + "\n\u200b", true));
+            fields.add(makeField("🎮 職業", jobLevel + "\n\u200b", true));
+            fields.add(makeField("👥 人數", "1 / 6\n\u200b", true));
         }
         embed.put("fields", fields);
         embed.put("footer", Map.of("text", "KiHongan 遠征報名系統"));
@@ -81,11 +81,11 @@ public class DiscordWebhookService {
         embed.put("title", isFull ? "🔴 遠征已滿員：" + raidTitle : "✅ 新成員報名：" + raidTitle);
         embed.put("color", isFull ? 15277667 : 2600544);
         List<Map<String, Object>> fields = new ArrayList<>();
-        fields.add(makeField("👤 玩家", userName, true));
-        fields.add(makeField("⚔️ 角色", characterName, true));
-        fields.add(makeField("🎮 職業", jobLevel, true));
-        fields.add(makeField("🎯 隊長", creatorName, true));
-        fields.add(makeField("👥 人數", currentCount + " / " + maxCount, true));
+        fields.add(makeField("👤 玩家", userName + "\n\u200b", true));
+        fields.add(makeField("⚔️ 角色", characterName + "\n\u200b", true));
+        fields.add(makeField("🎮 職業", jobLevel + "\n\u200b", true));
+        fields.add(makeField("🎯 隊長", creatorName + "\n\u200b", true));
+        fields.add(makeField("👥 人數", currentCount + " / " + maxCount + "\n\u200b", true));
         if (memberList != null && !memberList.isEmpty()) {
             StringBuilder members = new StringBuilder();
             for (int i = 0; i < memberList.size(); i++) {
@@ -105,11 +105,11 @@ public class DiscordWebhookService {
         embed.put("title", "❌ 取消報名：" + raidTitle);
         embed.put("color", 15158332);
         List<Map<String, Object>> fields = new ArrayList<>();
-        fields.add(makeField("👤 玩家", userName, true));
-        fields.add(makeField("⚔️ 角色", characterName, true));
+        fields.add(makeField("👤 玩家", userName + "\n\u200b", true));
+        fields.add(makeField("⚔️ 角色", characterName + "\n\u200b", true));
         fields.add(makeField("\u200b", "\u200b", true)); // spacer
-        fields.add(makeField("🎯 隊長", creatorName, true));
-        fields.add(makeField("👥 人數", currentCount + " / " + maxCount, true));
+        fields.add(makeField("🎯 隊長", creatorName + "\n\u200b", true));
+        fields.add(makeField("👥 人數", currentCount + " / " + maxCount + "\n\u200b", true));
         embed.put("fields", fields);
         embed.put("footer", Map.of("text", "KiHongan 遠征報名系統"));
         sendEmbed(embed);
