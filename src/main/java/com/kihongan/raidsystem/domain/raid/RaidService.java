@@ -5,7 +5,6 @@ import com.kihongan.raidsystem.domain.raid.dto.RaidDTO;
 import com.kihongan.raidsystem.domain.signup.SignupRepository;
 import com.kihongan.raidsystem.exception.ValidationException;
 import com.kihongan.raidsystem.service.DiscordWebhookService;
-import com.kihongan.raidsystem.service.LineMessagingService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,14 +25,12 @@ public class RaidService {
     private final RaidRepository raidRepository;
     private final SignupRepository signupRepository;
     private final JdbcTemplate jdbcTemplate;
-    private final LineMessagingService lineMessagingService;
     private final DiscordWebhookService discordWebhookService;
     
-    public RaidService(RaidRepository raidRepository, SignupRepository signupRepository, JdbcTemplate jdbcTemplate, LineMessagingService lineMessagingService, DiscordWebhookService discordWebhookService) {
+    public RaidService(RaidRepository raidRepository, SignupRepository signupRepository, JdbcTemplate jdbcTemplate, DiscordWebhookService discordWebhookService) {
         this.raidRepository = raidRepository;
         this.signupRepository = signupRepository;
         this.jdbcTemplate = jdbcTemplate;
-        this.lineMessagingService = lineMessagingService;
         this.discordWebhookService = discordWebhookService;
     }
     
@@ -137,20 +134,6 @@ public class RaidService {
             );
             
             LocalDateTime startTime = LocalDateTime.ofInstant(savedRaid.getStartTime(), ZoneId.of("Asia/Taipei"));
-            
-            // LINE notification
-            try {
-                if (characterName != null) {
-                    lineMessagingService.sendRaidCreatedWithSignupNotification(
-                        savedRaid.getTitle(), creatorName, startTime,
-                        savedRaid.getSubtitle(), characterName, characterJob, characterLevel);
-                } else {
-                    lineMessagingService.sendRaidCreatedNotification(
-                        savedRaid.getTitle(), creatorName, startTime, savedRaid.getSubtitle());
-                }
-            } catch (Exception e) {
-                System.err.println("Failed to send LINE notification: " + e.getMessage());
-            }
             
             // Discord notification
             try {

@@ -16,11 +16,18 @@ import java.util.*;
 public class DiscordWebhookService {
 
     private final String webhookUrl;
+    private final String proxyUrl;
+    private final String proxySecret;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-    public DiscordWebhookService(@Value("${discord.webhook.url:}") String webhookUrl) {
+    public DiscordWebhookService(
+            @Value("${discord.webhook.url:}") String webhookUrl,
+            @Value("${discord.proxy.url:}") String proxyUrl,
+            @Value("${discord.proxy.secret:kihongan-raid-2026}") String proxySecret) {
         this.webhookUrl = webhookUrl;
+        this.proxyUrl = proxyUrl;
+        this.proxySecret = proxySecret;
         this.httpClient = HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper();
     }
@@ -102,34 +109,67 @@ public class DiscordWebhookService {
     }
 
     private void sendEmbed(Map<String, Object> embed) {
-        sendEmbedWithRetry(embed, 0);
+        // Run in a separate thread to not block the main request
+        new Thread(() -> sendEmbedWithRetry(embed, 0)).start();
     }
 
+    private boolean useProxy() {
+        return proxyUrl != null && !proxyUrl.isEmpty();
+    }
+
+    @SuppressWarnings("unchecked")
     private void sendEmbedWithRetry(Map<String, Object> embed, int attempt) {
-        if (attempt >= 3) {
-            System.err.println("Discord webhook failed after 3 attempts, giving up.");
+        if (attempt >= 5) {
+            System.err.println("Discord webhook failed after 5 attempts, giving up.");
             return;
         }
         try {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("embeds", List.of(embed));
             String json = objectMapper.writeValueAsString(payload);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(webhookUrl))
-                    .header("Content-Type", "application/json")
+
+            HttpRequest.Builder requestBuilder;
+            if (useProxy()) {
+                // 透過 Cloudflare Worker 代理發送
+                requestBuilder = HttpRequest.newBuilder()
+                        .uri(URI.create(proxyUrl))
+                        .header("Content-Type", "application/json")
+                        .header("X-Proxy-Secret", proxySecret)
+                        .header("X-Target-Url", webhookUrl);
+                System.out.println("Sending Discord notification via proxy: " + proxyUrl);
+            } else {
+                // 直接發送到 Discord
+                requestBuilder = HttpRequest.newBuilder()
+                        .uri(URI.create(webhookUrl))
+                        .header("Content-Type", "application/json");
+            }
+
+            HttpRequest request = requestBuilder
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
-            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                    .thenAccept(response -> {
-                        if (response.statusCode() == 429) {
-                            long retryAfter = 2000L * (attempt + 1);
-                            System.err.println("Discord rate limited, retrying in " + retryAfter + "ms (attempt " + (attempt + 1) + ")");
-                            try { Thread.sleep(retryAfter); } catch (InterruptedException ignored) {}
-                            sendEmbedWithRetry(embed, attempt + 1);
-                        } else if (response.statusCode() >= 400) {
-                            System.err.println("Discord webhook failed: " + response.statusCode() + " " + response.body());
-                        }
-                    });
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 429) {
+                long retryMs = 10000;
+                try {
+                    Map<String, Object> body = objectMapper.readValue(response.body(), Map.class);
+                    Object retryAfter = body.get("retry_after");
+                    if (retryAfter instanceof Number) {
+                        retryMs = (long)(((Number) retryAfter).doubleValue() * 1000) + 500;
+                    }
+                } catch (Exception ignored) {}
+
+                System.err.println("Discord rate limited, retrying in " + retryMs + "ms (attempt " + (attempt + 1) + "/5)");
+                Thread.sleep(retryMs);
+                sendEmbedWithRetry(embed, attempt + 1);
+            } else if (response.statusCode() >= 400) {
+                System.err.println("Discord webhook failed: " + response.statusCode() + " " + response.body());
+            } else {
+                System.out.println("Discord notification sent successfully (status: " + response.statusCode() + ")");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             System.err.println("Failed to send Discord notification: " + e.getMessage());
         }

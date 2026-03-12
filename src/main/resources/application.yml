@@ -31,6 +31,9 @@ line:
 discord:
   webhook:
     url: ${DISCORD_WEBHOOK_URL:}
+  proxy:
+    url: ${DISCORD_PROXY_URL:}
+    secret: ${DISCORD_PROXY_SECRET:kihongan-raid-2026}
 
 app:
   jwt:
