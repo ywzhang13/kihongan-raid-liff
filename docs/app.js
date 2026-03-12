@@ -620,7 +620,7 @@ function showCharacterSelectModal(raidId, characters) {
     const list = document.getElementById('characterSelectList');
     
     list.innerHTML = characters.map(char => `
-        <div class="character-select-item" onclick="confirmSignup(${raidId}, ${char.id})">
+        <div class="character-select-item" id="char-item-${char.id}" onclick="confirmSignup(${raidId}, ${char.id}, this)">
             <h4>⚔️ ${char.name} ${char.isDefault ? '⭐' : ''}</h4>
             <p><strong>職業:</strong> ${char.job || '未設定'} | <strong>等級:</strong> ${char.level || '?'}</p>
         </div>
@@ -630,7 +630,18 @@ function showCharacterSelectModal(raidId, characters) {
 }
 
 // 確認報名
-async function confirmSignup(raidId, characterId) {
+async function confirmSignup(raidId, characterId, itemEl) {
+    // 防止重複點擊
+    const allItems = document.querySelectorAll('.character-select-item');
+    allItems.forEach(el => {
+        el.style.pointerEvents = 'none';
+        el.style.opacity = '0.5';
+    });
+    if (itemEl) {
+        itemEl.style.opacity = '1';
+        itemEl.innerHTML += ' <span style="font-size:12px;color:#888;">⏳ 報名中...</span>';
+    }
+
     try {
         const result = await apiRequest(`/raids/${raidId}/signup`, {
             method: 'POST',
@@ -638,14 +649,10 @@ async function confirmSignup(raidId, characterId) {
         });
         
         closeModal('characterSelectModal');
-        
-        // 顯示成功訊息
         showSuccessMessage('✅ 報名成功！');
         
-        // 重新載入遠征列表和報名名單
         await loadRaids();
         
-        // 如果報名名單已展開，重新載入
         const signupsDiv = document.getElementById(`signups-${raidId}`);
         if (signupsDiv && signupsDiv.classList.contains('show')) {
             await loadRaidSignups(raidId);
