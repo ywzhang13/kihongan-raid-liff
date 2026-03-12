@@ -68,7 +68,7 @@ public class DiscordWebhookService {
         }
         embed.put("fields", fields);
         embed.put("footer", Map.of("text", "KiHongan 遠征報名系統"));
-        sendEmbed(embed);
+        sendEmbed(embed, "<@&1481614761836675072>");
     }
 
     public void sendSignupNotification(String raidTitle, String userName,
@@ -124,8 +124,11 @@ public class DiscordWebhookService {
     }
 
     private void sendEmbed(Map<String, Object> embed) {
-        // Run in a separate thread to not block the main request
-        new Thread(() -> sendEmbedWithRetry(embed, 0)).start();
+        sendEmbed(embed, null);
+    }
+
+    private void sendEmbed(Map<String, Object> embed, String mention) {
+        new Thread(() -> sendEmbedWithRetry(embed, mention, 0)).start();
     }
 
     private boolean useProxy() {
@@ -133,13 +136,16 @@ public class DiscordWebhookService {
     }
 
     @SuppressWarnings("unchecked")
-    private void sendEmbedWithRetry(Map<String, Object> embed, int attempt) {
+    private void sendEmbedWithRetry(Map<String, Object> embed, String mention, int attempt) {
         if (attempt >= 5) {
             System.err.println("Discord webhook failed after 5 attempts, giving up.");
             return;
         }
         try {
             Map<String, Object> payload = new LinkedHashMap<>();
+            if (mention != null && !mention.isEmpty()) {
+                payload.put("content", mention);
+            }
             payload.put("embeds", List.of(embed));
             String json = objectMapper.writeValueAsString(payload);
 
@@ -177,7 +183,7 @@ public class DiscordWebhookService {
 
                 System.err.println("Discord rate limited, retrying in " + retryMs + "ms (attempt " + (attempt + 1) + "/5)");
                 Thread.sleep(retryMs);
-                sendEmbedWithRetry(embed, attempt + 1);
+                sendEmbedWithRetry(embed, mention, attempt + 1);
             } else if (response.statusCode() >= 400) {
                 System.err.println("Discord webhook failed: " + response.statusCode() + " " + response.body());
             } else {
