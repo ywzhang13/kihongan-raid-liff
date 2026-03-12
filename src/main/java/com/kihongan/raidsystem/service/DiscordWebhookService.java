@@ -46,19 +46,25 @@ public class DiscordWebhookService {
         String weekDay = "週" + weekDays[startTime.getDayOfWeek().getValue() % 7];
 
         Map<String, Object> embed = new LinkedHashMap<>();
-        embed.put("title", "⚔️ 新遠征隊：" + raidTitle);
+        embed.put("title", "⚔️ 新遠征隊建立");
         embed.put("color", 6717674);
+
+        StringBuilder desc = new StringBuilder();
+        desc.append("## ").append(raidTitle).append("\n");
+        if (subtitle != null && !subtitle.isEmpty()) {
+            desc.append("> ").append(subtitle).append("\n");
+        }
+        embed.put("description", desc.toString());
 
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(makeField("👤 建立人", creatorName, true));
         fields.add(makeField("⏰ 時間", timeStr + " " + weekDay, true));
-        if (subtitle != null && !subtitle.isEmpty()) {
-            fields.add(makeField("📝 備註", subtitle, false));
-        }
         if (characterName != null) {
             String jobLevel = (job != null ? job : "未設定") + (level != null ? " Lv." + level : "");
-            fields.add(makeField("⚔️ 參加角色", characterName + " (" + jobLevel + ")", false));
-            fields.add(makeField("👥 人數", "1/6 人", true));
+            fields.add(makeField("\u200b", "\u200b", true)); // spacer
+            fields.add(makeField("⚔️ 參加角色", characterName, true));
+            fields.add(makeField("🎮 職業", jobLevel, true));
+            fields.add(makeField("👥 人數", "1 / 6", true));
         }
         embed.put("fields", fields);
         embed.put("footer", Map.of("text", "KiHongan 遠征報名系統"));
@@ -67,18 +73,26 @@ public class DiscordWebhookService {
 
     public void sendSignupNotification(String raidTitle, String userName,
             String characterName, String job, Integer level,
-            int currentCount, int maxCount, String creatorName) {
+            int currentCount, int maxCount, String creatorName, List<String> memberList) {
         if (!isEnabled()) return;
         String jobLevel = (job != null ? job : "未設定") + (level != null ? " Lv." + level : "");
         boolean isFull = currentCount >= maxCount;
         Map<String, Object> embed = new LinkedHashMap<>();
-        embed.put("title", "✅ 報名成功：" + raidTitle);
+        embed.put("title", isFull ? "🔴 遠征已滿員：" + raidTitle : "✅ 新成員報名：" + raidTitle);
         embed.put("color", isFull ? 15277667 : 2600544);
         List<Map<String, Object>> fields = new ArrayList<>();
-        fields.add(makeField("🎯 隊長", creatorName, true));
         fields.add(makeField("👤 玩家", userName, true));
-        fields.add(makeField("⚔️ 角色", characterName + " (" + jobLevel + ")", false));
-        fields.add(makeField("👥 人數", currentCount + "/" + maxCount + " 人" + (isFull ? " 🔴 已滿員" : ""), true));
+        fields.add(makeField("⚔️ 角色", characterName, true));
+        fields.add(makeField("🎮 職業", jobLevel, true));
+        fields.add(makeField("🎯 隊長", creatorName, true));
+        fields.add(makeField("👥 人數", currentCount + " / " + maxCount, true));
+        if (memberList != null && !memberList.isEmpty()) {
+            StringBuilder members = new StringBuilder();
+            for (int i = 0; i < memberList.size(); i++) {
+                members.append("`").append(i + 1).append("` ").append(memberList.get(i)).append("\n");
+            }
+            fields.add(makeField("📋 目前成員", members.toString().trim(), false));
+        }
         embed.put("fields", fields);
         embed.put("footer", Map.of("text", "KiHongan 遠征報名系統"));
         sendEmbed(embed);
@@ -91,10 +105,11 @@ public class DiscordWebhookService {
         embed.put("title", "❌ 取消報名：" + raidTitle);
         embed.put("color", 15158332);
         List<Map<String, Object>> fields = new ArrayList<>();
-        fields.add(makeField("🎯 隊長", creatorName, true));
         fields.add(makeField("👤 玩家", userName, true));
-        fields.add(makeField("⚔️ 角色", characterName, false));
-        fields.add(makeField("👥 人數", currentCount + "/" + maxCount + " 人", true));
+        fields.add(makeField("⚔️ 角色", characterName, true));
+        fields.add(makeField("\u200b", "\u200b", true)); // spacer
+        fields.add(makeField("🎯 隊長", creatorName, true));
+        fields.add(makeField("👥 人數", currentCount + " / " + maxCount, true));
         embed.put("fields", fields);
         embed.put("footer", Map.of("text", "KiHongan 遠征報名系統"));
         sendEmbed(embed);

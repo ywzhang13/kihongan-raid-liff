@@ -84,12 +84,15 @@ public class SignupService {
                     "SELECT name FROM users WHERE id = ?", String.class, userId);
                 String creatorName = jdbcTemplate.queryForObject(
                     "SELECT name FROM users WHERE id = ?", String.class, raid.getCreatedBy());
-                int currentCount = signupRepository.findByRaidIdWithDetails(raidId).size();
+                List<SignupWithDetails> currentSignups = signupRepository.findByRaidIdWithDetails(raidId);
+                List<String> memberList = currentSignups.stream()
+                    .map(s -> s.getCharacterName() + " (" + (s.getJob() != null ? s.getJob() : "未設定") + ")")
+                    .collect(java.util.stream.Collectors.toList());
                 
                 discordWebhookService.sendSignupNotification(
                     raid.getTitle(), userName, character.getName(),
                     character.getJob(), character.getLevel(),
-                    currentCount, 6, creatorName);
+                    currentSignups.size(), 6, creatorName, memberList);
             } catch (Exception e) {
                 System.err.println("Failed to send Discord signup notification: " + e.getMessage());
             }
